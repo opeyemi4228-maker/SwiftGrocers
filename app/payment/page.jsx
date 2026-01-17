@@ -3,10 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import * as Icons from 'lucide-react';
-
-// Map lucide exports and provide a small fallback for Bank if it's not available
-const {
+import {
   CreditCard,
   Lock,
   ArrowLeft,
@@ -20,20 +17,12 @@ const {
   Phone,
   DollarSign,
   Copy,
-  Globe
-} = Icons;
+  Globe,
+  Landmark
+} from 'lucide-react';
 
-const Bank = Icons.Bank || function BankFallback(props) {
-  // simple fallback bank icon (keeps styling same as lucide-react components)
-  return (
-    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 10.5L12 4l9 6.5" />
-      <path d="M5 10.5v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6" />
-      <path d="M10 14v3" />
-      <path d="M14 14v3" />
-    </svg>
-  );
-};
+// Use Landmark as a bank icon alternative
+const Bank = Landmark;
 
 import { clearCart, getTotal } from '@/lib/cart';
 import Navbar from '@/components/Navbar';
