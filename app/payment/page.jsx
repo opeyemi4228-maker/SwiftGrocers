@@ -1,456 +1,352 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import {
+  Banknote,
+  Check,
+  ChevronLeft,
   CreditCard,
   Lock,
-  ArrowLeft,
-  CheckCircle2,
-  Loader2,
-  AlertCircle,
-  Eye,
-  EyeOff,
-  Calendar,
-  User,
-  Phone,
-  DollarSign,
-  Copy,
-  Globe,
-  Landmark
-} from 'lucide-react';
+  ShoppingBag,
+  Smartphone,
+  Truck,
+} from "lucide-react";
+import { useCartStore, selectSubtotal, useCartHydrated } from "@/lib/states/cartStore";
+import { priceOrder } from "@/lib/commerce";
+import { formatPrice, cn } from "@/lib/utils";
+import Button from "@/components/ui/Button";
+import Input, { Field, Select } from "@/components/ui/Input";
+import EmptyState from "@/components/ui/EmptyState";
+import Skeleton from "@/components/ui/Skeleton";
+import SmartImage from "@/components/ui/SmartImage";
 
-// Use Landmark as a bank icon alternative
-const Bank = Landmark;
+const SLOTS = [
+  { id: "asap", label: "Within 2 hours", detail: "Arrives by 2:40 PM today" },
+  { id: "evening", label: "This evening", detail: "Between 6:00 and 9:00 PM" },
+  { id: "tomorrow", label: "Tomorrow morning", detail: "Between 8:00 and 11:00 AM" },
+];
 
-import { clearCart, getTotal } from '@/lib/cart';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+const METHODS = [
+  { id: "card", label: "Card", detail: "Visa, Mastercard, Verve", icon: CreditCard },
+  { id: "transfer", label: "Bank transfer", detail: "Pay from your banking app", icon: Smartphone },
+  { id: "cash", label: "Pay on delivery", detail: "Cash or POS at your door", icon: Banknote },
+];
 
-export default function PaymentPage() {
+function OptionCard({ selected, onSelect, name, title, detail, icon: Icon }) {
+  return (
+    <label
+      className={cn(
+        "flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-[border-color,background-color] duration-fast",
+        selected
+          ? "border-brand-600 bg-brand-50 dark:bg-brand-950"
+          : "border-line hover:border-line-strong hover:bg-surface-sunken"
+      )}
+    >
+      <input
+        type="radio"
+        name={name}
+        checked={selected}
+        onChange={onSelect}
+        className="sr-only"
+      />
+
+      <span
+        className={cn(
+          "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition-colors",
+          selected ? "border-brand-600 bg-brand-600 text-neutral-0" : "border-line-strong"
+        )}
+        aria-hidden="true"
+      >
+        {selected ? <Check className="h-3 w-3" strokeWidth={3} /> : null}
+      </span>
+
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-2 text-sm font-semibold text-content-strong">
+          {Icon ? <Icon className="h-4 w-4 shrink-0" aria-hidden="true" /> : null}
+          {title}
+        </span>
+        <span className="mt-0.5 block text-xs text-content-muted">{detail}</span>
+      </span>
+    </label>
+  );
+}
+
+export default function CheckoutPage() {
   const router = useRouter();
-  const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
-  const [showCardNumber, setShowCardNumber] = useState(false);
-  const [notification, setNotification] = useState(null);
-  const [selectedPayment, setSelectedPayment] = useState('card');
+  const hydrated = useCartHydrated();
+  const items = useCartStore((state) => state.items);
+  const promo = useCartStore((state) => state.promo);
+  const clearCart = useCartStore((state) => state.clearCart);
+  const subtotal = useCartStore(selectSubtotal);
 
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
-    saveCard: false
+  const [slot, setSlot] = useState("asap");
+  const [method, setMethod] = useState("card");
+  const [placing, setPlacing] = useState(false);
+  const [address, setAddress] = useState({
+    name: "",
+    phone: "",
+    street: "",
+    city: "Lagos",
+    note: "",
   });
-
   const [errors, setErrors] = useState({});
 
-  useEffect(() => {
-    const cartTotal = getTotal();
-    setTotal(cartTotal);
-  }, []);
+  const { discount, delivery, total } = priceOrder(subtotal, promo);
 
-  const showNotification = (type, message) => {
-    setNotification({ type, message });
-    setTimeout(() => setNotification(null), 4000);
+  const set = (key) => (event) => {
+    setAddress((previous) => ({ ...previous, [key]: event.target.value }));
+    setErrors((previous) => ({ ...previous, [key]: undefined }));
   };
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
-  };
+  const placeOrder = async (event) => {
+    event.preventDefault();
 
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
-    if (!formData.email) newErrors.email = 'Email is required';
-    else if (!/^\S+@\S+\.\S+$/.test(formData.email)) newErrors.email = 'Invalid email format';
-    if (!formData.phone) newErrors.phone = 'Phone number is required';
+    const next = {};
+    if (!address.name.trim()) next.name = "Who should the driver ask for?";
+    if (!/^[0-9+\s-]{7,}$/.test(address.phone)) next.phone = "Enter a reachable phone number.";
+    if (address.street.trim().length < 6) next.street = "Enter the full street address.";
 
-    if (selectedPayment === 'card') {
-      if (!formData.cardNumber) newErrors.cardNumber = 'Card number is required';
-      else if (formData.cardNumber.replace(/\s/g, '').length !== 16) newErrors.cardNumber = 'Card number must be 16 digits';
-      if (!formData.expiryDate) newErrors.expiryDate = 'Expiry date is required';
-      else if (!/^\d{2}\/\d{2}$/.test(formData.expiryDate)) newErrors.expiryDate = 'Format: MM/YY';
-      if (!formData.cvv) newErrors.cvv = 'CVV is required';
-      else if (formData.cvv.length !== 3) newErrors.cvv = 'CVV must be 3 digits';
+    setErrors(next);
+    if (Object.keys(next).length > 0) {
+      toast.error("Check the highlighted fields");
+      return;
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setPlacing(true);
+    // No payments backend is wired up yet; this stands in for that call.
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    clearCart();
+    router.push("/order-placed");
   };
 
-  const formatCardNumber = (value) =>
-    value.replace(/\s/g, '').replace(/(\d{4})/g, '$1 ').trim();
-
-  const handleCardNumberChange = (e) => {
-    const formatted = formatCardNumber(e.target.value);
-    if (formatted.replace(/\s/g, '').length <= 16) {
-      setFormData((prev) => ({ ...prev, cardNumber: formatted }));
-    }
-  };
-
-  const handleExpiryChange = (e) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length >= 3) value = value.slice(0, 2) + '/' + value.slice(2, 4);
-    setFormData((prev) => ({ ...prev, expiryDate: value }));
-  };
-
-  const handleCVVChange = (e) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 3);
-    setFormData((prev) => ({ ...prev, cvv: value }));
-  };
-
-  const handlePayment = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    setIsLoading(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 2000)); // simulate processing
-
-      if (selectedPayment === 'paypal') {
-        showNotification('success', 'Redirecting to PayPal...');
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-      } else if (selectedPayment === 'bank') {
-        showNotification('success', 'Bank transfer instructions confirmed.');
-      }
-
-      setPaymentSuccess(true);
-      clearCart();
-      setTimeout(() => router.push('/'), 3000);
-    } catch (err) {
-      showNotification('error', err?.message || 'Payment failed. Try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleBackToCart = () => router.push('/cart');
-
-  const copyToClipboard = async (text) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      showNotification('success', 'Copied to clipboard!');
-    } catch {
-      showNotification('error', 'Unable to copy to clipboard');
-    }
-  };
-
-  if (paymentSuccess) {
+  if (!hydrated) {
     return (
-      <>
-        <Navbar />
-        <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center p-4 font-[Montserrat]">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="bg-white rounded-3xl shadow-2xl p-12 max-w-md w-full text-center"
-          >
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 500, damping: 20, delay: 0.2 }}
-              className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"
-            >
-              <CheckCircle2 className="w-12 h-12 text-green-600" />
-            </motion.div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Payment Successful!</h1>
-            <p className="text-gray-600 mb-6">Your order has been confirmed. Redirecting...</p>
-            <motion.div className="bg-green-50 rounded-xl p-4 mb-6">
-              <div className="flex justify-between font-semibold text-gray-900 mb-1">
-                <span>Amount Paid:</span>
-                <span className="text-green-600">₦{total.toLocaleString()}</span>
-              </div>
-              <div className="text-sm text-gray-600">
-                Confirmation sent to <strong>{formData.email}</strong>
-              </div>
-            </motion.div>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => router.push('/')}
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold transition-all"
-            >
-              Back to Home
-            </motion.button>
-          </motion.div>
+      <div className="container-page py-12" aria-busy="true" aria-label="Loading checkout">
+        <Skeleton className="h-9 w-40" />
+        <div className="mt-10 grid gap-10 lg:grid-cols-12">
+          <div className="space-y-4 lg:col-span-7">
+            <Skeleton className="h-64 rounded-2xl" />
+            <Skeleton className="h-48 rounded-2xl" />
+          </div>
+          <Skeleton className="h-96 rounded-2xl lg:col-span-5" />
         </div>
-        <Footer />
-      </>
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="container-page py-16">
+        <EmptyState
+          icon={ShoppingBag}
+          title="There is nothing to check out"
+          description="Your cart is empty. Add a few things and come back."
+          action={<Button href="/shop">Start shopping</Button>}
+        />
+      </div>
     );
   }
 
   return (
-    <>
-      <Navbar />
-      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white font-[Montserrat]">
-        {notification && (
-          <motion.div
-            initial={{ opacity: 0, y: -50, x: '-50%' }}
-            animate={{ opacity: 1, y: 0, x: '-50%' }}
-            exit={{ opacity: 0, y: -50, x: '-50%' }}
-            className="fixed top-6 left-1/2 z-[9999] max-w-md w-full px-4"
-          >
-            <div
-              className={`rounded-xl shadow-2xl p-4 flex items-center gap-3 ${
-                notification.type === 'success' ? 'bg-green-600' : 'bg-red-600'
-              } text-white`}
-            >
-              {notification.type === 'success' ? (
-                <CheckCircle2 className="w-6 h-6" />
-              ) : (
-                <AlertCircle className="w-6 h-6" />
-              )}
-              <span className="font-semibold">{notification.message}</span>
-            </div>
-          </motion.div>
-        )}
+    <div className="container-page py-10 sm:py-14">
+      <Link
+        href="/cart"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-content-muted transition-colors hover:text-content-strong"
+      >
+        <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+        Back to cart
+      </Link>
 
-        <div className="max-w-3xl mx-auto px-4 py-12">
-          <motion.button
-            whileHover={{ x: -4 }}
-            onClick={handleBackToCart}
-            className="flex items-center gap-2 text-green-600 hover:text-green-700 font-semibold mb-8 transition-all"
-          >
-            <ArrowLeft className="w-5 h-5" /> Back to Cart
-          </motion.button>
+      <h1 className="mt-4 text-3xl font-bold sm:text-4xl">Checkout</h1>
+      <p className="mt-2 text-base text-content-muted">
+        Two steps: where it goes, and how you pay.
+      </p>
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Payment Form */}
-            <div className="lg:col-span-2">
-              <motion.form
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                onSubmit={handlePayment}
-                className="bg-white rounded-2xl shadow-lg p-8 space-y-6"
+      <form onSubmit={placeOrder} noValidate className="mt-10 grid gap-10 lg:grid-cols-12 lg:gap-14">
+        <div className="space-y-10 lg:col-span-7">
+          {/* Delivery details */}
+          <section>
+            <h2 className="text-lg font-semibold">
+              <span className="mr-2 text-content-muted">1.</span>
+              Delivery address
+            </h2>
+
+            <div className="mt-5 grid gap-5 sm:grid-cols-2">
+              <Field label="Full name" htmlFor="name" required error={errors.name}>
+                <Input value={address.name} onChange={set("name")} autoComplete="name" placeholder="Amaka Nwosu" />
+              </Field>
+
+              <Field label="Phone number" htmlFor="phone" required error={errors.phone}>
+                <Input
+                  type="tel"
+                  value={address.phone}
+                  onChange={set("phone")}
+                  autoComplete="tel"
+                  placeholder="0801 234 5678"
+                />
+              </Field>
+
+              <Field
+                label="Street address"
+                htmlFor="street"
+                required
+                error={errors.street}
+                className="sm:col-span-2"
               >
-                {/* Personal Info */}
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">Personal Information</h2>
-                  <div className="space-y-4">
-                    <div className="relative">
-                      <User className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Full Name"
-                        name="fullName"
-                        value={formData.fullName}
-                        onChange={handleChange}
-                        className="w-full pl-12 px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-green-500"
-                      />
-                    </div>
-                    <div>
-                      <input
-                        type="email"
-                        placeholder="Email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-green-500"
-                      />
-                    </div>
-                    <div className="relative">
-                      <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type="tel"
-                        placeholder="Phone"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        className="w-full pl-12 px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-green-500"
-                      />
-                    </div>
-                  </div>
-                </div>
+                <Input
+                  value={address.street}
+                  onChange={set("street")}
+                  autoComplete="street-address"
+                  placeholder="12 Admiralty Way, Lekki Phase 1"
+                />
+              </Field>
 
-                <hr className="border-gray-200" />
+              <Field label="City" htmlFor="city">
+                <Select value={address.city} onChange={set("city")}>
+                  <option>Lagos</option>
+                  <option>Abuja</option>
+                  <option>Port Harcourt</option>
+                </Select>
+              </Field>
 
-                {/* Payment Options */}
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">Payment Method</h2>
-                  <div className="space-y-3">
-                    {[
-                      { id: 'card', label: 'Credit/Debit Card', icon: <CreditCard className="w-5 h-5" /> },
-                      { id: 'paypal', label: 'PayPal', icon: <Globe className="w-5 h-5" /> },
-                      { id: 'bank', label: 'Bank Transfer', icon: <Bank className="w-5 h-5" /> },
-                      { id: 'cod', label: 'Cash on Delivery', icon: <DollarSign className="w-5 h-5" /> }
-                    ].map((option) => (
-                      <div key={option.id}>
-                        <label
-                          className={`flex items-center gap-3 cursor-pointer p-3 border rounded-xl ${
-                            selectedPayment === option.id ? 'border-green-600 bg-green-50' : 'border-gray-200'
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name="paymentOption"
-                            value={option.id}
-                            checked={selectedPayment === option.id}
-                            onChange={() => setSelectedPayment(option.id)}
-                            className="accent-green-600"
-                          />
-                          {option.icon}
-                          <span className="font-semibold">{option.label}</span>
-                        </label>
+              <Field label="Note for the driver" htmlFor="note" hint="Gate code, landmark, anything useful.">
+                <Input value={address.note} onChange={set("note")} placeholder="Blue gate opposite the pharmacy" />
+              </Field>
+            </div>
+          </section>
 
-                        <AnimatePresence>
-                          {selectedPayment === option.id && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: 'auto' }}
-                              exit={{ opacity: 0, height: 0 }}
-                              className="overflow-hidden pl-10 mt-2 space-y-2"
-                            >
-                              {option.id === 'card' && (
-                                <>
-                                  <div className="relative">
-                                    <CreditCard className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                    <input
-                                      type={showCardNumber ? 'text' : 'password'}
-                                      name="cardNumber"
-                                      value={formData.cardNumber}
-                                      onChange={handleCardNumberChange}
-                                      placeholder="Card Number"
-                                      className="w-full pl-12 px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-green-500"
-                                    />
-                                    <button
-                                      type="button"
-                                      onClick={() => setShowCardNumber((s) => !s)}
-                                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400"
-                                    >
-                                      {showCardNumber ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                    </button>
-                                  </div>
+          {/* Delivery window */}
+          <section>
+            <h2 className="text-lg font-semibold">
+              <span className="mr-2 text-content-muted">2.</span>
+              Delivery window
+            </h2>
 
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <input
-                                      type="text"
-                                      name="expiryDate"
-                                      value={formData.expiryDate}
-                                      onChange={handleExpiryChange}
-                                      placeholder="MM/YY"
-                                      className="w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-green-500"
-                                    />
-                                    <input
-                                      type="password"
-                                      name="cvv"
-                                      value={formData.cvv}
-                                      onChange={handleCVVChange}
-                                      placeholder="CVV"
-                                      className="w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-green-500"
-                                    />
-                                  </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              {SLOTS.map((option) => (
+                <OptionCard
+                  key={option.id}
+                  name="slot"
+                  selected={slot === option.id}
+                  onSelect={() => setSlot(option.id)}
+                  title={option.label}
+                  detail={option.detail}
+                />
+              ))}
+            </div>
+          </section>
 
-                                  <label className="flex items-center gap-2">
-                                    <input
-                                      type="checkbox"
-                                      name="saveCard"
-                                      checked={formData.saveCard}
-                                      onChange={handleChange}
-                                    />
-                                    <span className="text-sm">Save card</span>
-                                  </label>
-                                </>
-                              )}
+          {/* Payment */}
+          <section>
+            <h2 className="text-lg font-semibold">
+              <span className="mr-2 text-content-muted">3.</span>
+              Payment
+            </h2>
 
-                              {option.id === 'paypal' && (
-                                <div className="pt-2">
-                                  <p className="text-sm text-gray-600 mb-2">
-                                    You will be redirected to PayPal to complete the payment.
-                                  </p>
-                                </div>
-                              )}
-
-                              {option.id === 'bank' && (
-                                <div className="bg-gray-50 p-3 rounded-xl space-y-2 text-sm">
-                                  <p>Bank: Zenith Bank</p>
-                                  <p>Account: 1234567890</p>
-                                  <p>Amount: ₦{total.toLocaleString()}</p>
-                                  <p>Reference: ORD12345</p>
-                                  <button
-                                    type="button"
-                                    onClick={() => copyToClipboard('1234567890')}
-                                    className="flex items-center gap-1 text-green-600"
-                                  >
-                                    Copy Account <Copy className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              )}
-
-                              {option.id === 'cod' && <p className="text-gray-600 text-sm">Pay cash on delivery.</p>}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
-                >
-                  {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Pay ₦{total.toLocaleString()}</>}
-                </motion.button>
-              </motion.form>
+            <div className="mt-5 grid gap-3">
+              {METHODS.map((option) => (
+                <OptionCard
+                  key={option.id}
+                  name="method"
+                  selected={method === option.id}
+                  onSelect={() => setMethod(option.id)}
+                  title={option.label}
+                  detail={option.detail}
+                  icon={option.icon}
+                />
+              ))}
             </div>
 
-            {/* Order Summary Sidebar */}
-            <div className="lg:col-span-1">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="bg-white rounded-2xl shadow-lg p-6 sticky top-6"
-              >
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
+            {method === "card" ? (
+              <div className="mt-5 grid gap-5 rounded-2xl bg-surface-sunken p-5 sm:grid-cols-2">
+                <Field label="Card number" htmlFor="card" className="sm:col-span-2">
+                  <Input inputMode="numeric" placeholder="4242 4242 4242 4242" autoComplete="cc-number" />
+                </Field>
+                <Field label="Expiry" htmlFor="expiry">
+                  <Input placeholder="MM / YY" autoComplete="cc-exp" />
+                </Field>
+                <Field label="CVC" htmlFor="cvc">
+                  <Input inputMode="numeric" placeholder="123" autoComplete="cc-csc" />
+                </Field>
+              </div>
+            ) : null}
+          </section>
+        </div>
 
-                <div className="bg-green-50 rounded-xl p-4 mb-6">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-600">Order Total:</span>
-                    <motion.span
-                      key={total}
-                      initial={{ opacity: 0.5 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.3 }}
-                      className="text-3xl font-bold text-green-600"
-                    >
-                      ₦{total.toLocaleString()}
-                    </motion.span>
-                  </div>
-                  <p className="text-xs text-gray-500">Includes all taxes and fees</p>
-                </div>
+        {/* Summary */}
+        <aside className="lg:col-span-5">
+          <div className="lg:sticky lg:top-[calc(var(--header-height)+1.5rem)]">
+            <div className="rounded-2xl border border-line bg-surface p-6">
+              <h2 className="text-lg font-semibold">Your order</h2>
 
-                <div className="space-y-3 text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-green-600" /> Secure Payment
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-green-600" /> 24/7 Support
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-green-600" /> Fast Checkout
-                  </div>
+              <ul className="mt-5 max-h-64 space-y-4 overflow-y-auto pr-1">
+                {items.map((item) => (
+                  <li key={item.id} className="flex items-center gap-3">
+                    <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-surface-sunken">
+                      <SmartImage src={item.image} alt="" sizes="56px" className="object-cover" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-content-strong">
+                        {item.name}
+                      </span>
+                      <span className="tabular block text-xs text-content-muted">
+                        Qty {item.quantity}
+                      </span>
+                    </span>
+                    <span className="tabular shrink-0 text-sm font-semibold text-content-strong">
+                      {formatPrice(item.price * item.quantity)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              <dl className="mt-6 space-y-3 border-t border-line pt-5 text-sm">
+                <div className="flex justify-between">
+                  <dt className="text-content-muted">Subtotal</dt>
+                  <dd className="tabular font-medium text-content-strong">{formatPrice(subtotal)}</dd>
                 </div>
-              </motion.div>
+                {discount > 0 ? (
+                  <div className="flex justify-between">
+                    <dt className="text-content-muted">Discount ({promo?.code})</dt>
+                    <dd className="tabular font-medium text-brand-700 dark:text-brand-300">
+                      −{formatPrice(discount)}
+                    </dd>
+                  </div>
+                ) : null}
+                <div className="flex justify-between">
+                  <dt className="text-content-muted">Delivery</dt>
+                  <dd className="tabular font-medium text-content-strong">
+                    {delivery === 0 ? "Free" : formatPrice(delivery)}
+                  </dd>
+                </div>
+                <div className="flex items-baseline justify-between border-t border-line pt-4">
+                  <dt className="text-base font-semibold text-content-strong">Total</dt>
+                  <dd className="tabular text-2xl font-bold text-content-strong">
+                    {formatPrice(total)}
+                  </dd>
+                </div>
+              </dl>
+
+              <Button type="submit" size="lg" block loading={placing} className="mt-6">
+                {method === "cash" ? "Place order" : `Pay ${formatPrice(total)}`}
+              </Button>
+
+              <p className="mt-4 flex items-start gap-2 text-xs text-content-muted">
+                <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                Payments are encrypted end to end. We never store your card details.
+              </p>
+
+              <p className="mt-3 flex items-start gap-2 text-xs text-content-muted">
+                <Truck className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                You can change the delivery window any time before a picker starts your basket.
+              </p>
             </div>
           </div>
-        </div>
-      </div>
-      <Footer />
-    </>
+        </aside>
+      </form>
+    </div>
   );
 }

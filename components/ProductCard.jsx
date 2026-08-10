@@ -1,209 +1,325 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
+import Link from "next/link";
+import toast from "react-hot-toast";
+import { Heart, Leaf, ShoppingBasket, Timer } from "lucide-react";
+import { useCartStore } from "@/lib/states/cartStore";
+import { cn, formatPrice } from "@/lib/utils";
+import Badge from "@/components/ui/Badge";
+import Rating from "@/components/ui/Rating";
+import SmartImage from "@/components/ui/SmartImage";
+import QuantityStepper from "@/components/ui/QuantityStepper";
+import Skeleton from "@/components/ui/Skeleton";
+
+function StockNote({ stock }) {
+  if (stock <= 0) {
+    return <span className="text-xs font-medium text-content-muted">Out of stock</span>;
+  }
+  if (stock <= 10) {
+    return (
+      <span className="text-xs font-medium text-accent-700 dark:text-accent-300">
+        Only {stock} left
+      </span>
+    );
+  }
+  return null;
+}
 
 /**
- * ProductCard - improved add-to-cart behaviour
- * Writes cart to localStorage under 'swift_grocers_cart' and dispatches
- * a CustomEvent('cartUpdated', { detail: { count } }) so Navbar can update immediately.
+ * Product tile.
+ *
+ * The whole card is a link (via a stretched overlay anchor) while the cart
+ * controls sit above it, so a tap anywhere opens the product but the add
+ * button still works. Once an item is in the cart the button becomes a
+ * stepper in place — no dialog, no page change.
  */
-export default function ProductCard({ product }) {
-  const [adding, setAdding] = useState(false);
+export default function ProductCard({
+  product,
+  variant = "grid",
+  priority = false,
+  className,
+  style,
+}) {
+  const [wishlisted, setWishlisted] = useState(false);
+  const addItem = useCartStore((state) => state.addItem);
+  const setQuantity = useCartStore((state) => state.setQuantity);
+  const removeItem = useCartStore((state) => state.removeItem);
+  const quantity = useCartStore(
+    (state) => state.items.find((item) => item.id === product?.id)?.quantity ?? 0
+  );
 
   if (!product) return null;
 
   const {
     id,
+    slug,
     name,
     image,
-    images = [],
     price,
     originalPrice,
     discountPercent,
     rating,
     reviewCount,
-    weight,
-    vendor,
-    stock,
-    tags = [],
-    deliveryTime,
+    unit,
+    stock = 0,
     isOrganic,
-    isFresh,
+    bestseller,
+    isNew,
+    categoryLabel,
+    deliveryTime,
     description,
-    slug,
   } = product;
 
-  const priceFormatted = (n) =>
-    typeof n === "number" ? `₦${n.toLocaleString()}` : n;
+  const href = `/product/${slug ?? id}`;
+  const soldOut = stock <= 0;
 
-  // Helpers to read & write cart
-  const readCart = () => {
-    try {
-      const raw = localStorage.getItem("swift_grocers_cart");
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
+  const add = () => {
+    addItem(product, 1);
+    toast.success(`${name} added to cart`);
   };
 
-  const writeCart = (cart) => {
-    try {
-      localStorage.setItem("swift_grocers_cart", JSON.stringify(cart));
-      // Also create a storage-like event for other tabs (not necessary here but harmless)
-      // Note: storage events don't fire in same tab, so we dispatch a custom event below.
-      return true;
-    } catch (e) {
-      console.error("Failed to write cart", e);
-      return false;
-    }
-  };
-
-  const computeTotalCount = (cart) =>
-    cart.reduce((sum, it) => sum + (it.quantity || 1), 0);
-
-  const addToCart = async () => {
-    if (stock <= 0) return;
-    setAdding(true);
-    try {
-      const cart = readCart();
-      const existing = cart.find((it) => it.id === id);
-      if (existing) {
-        existing.quantity = (existing.quantity || 1) + 1;
-      } else {
-        cart.push({
-          id,
-          name,
-          price,
-          image: images[0] || image,
-          quantity: 1,
-          slug: slug || id,
-        });
-      }
-      writeCart(cart);
-
-      const totalCount = computeTotalCount(cart);
-
-      // Dispatch a CustomEvent so same-tab components (Navbar) update immediately.
-      // Include the computed count in event.detail for fast-path updates.
-      window.dispatchEvent(
-        new CustomEvent("cartUpdated", { detail: { count: totalCount } })
-      );
-    } catch (e) {
-      console.error("addToCart error", e);
-    } finally {
-      setAdding(false);
-    }
-  };
-
-  return (
-    <article className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden group">
-      <div className="relative w-full h-44 sm:h-56">
-        <Image
-          src={images[0] || image}
-          alt={name}
-          fill
-          sizes="(max-width: 640px) 100vw, 33vw"
-          className="object-cover"
-        />
-        {discountPercent > 0 && (
-          <span className="absolute left-3 top-3 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
-            -{discountPercent}%
-          </span>
+  const media = (
+    <div
+      className={cn(
+        "relative shrink-0 overflow-hidden bg-surface-sunken",
+        variant === "grid" ? "aspect-product w-full" : "aspect-square w-28 rounded-xl sm:w-36"
+      )}
+    >
+      <SmartImage
+        src={image}
+        alt={name}
+        priority={priority}
+        sizes={
+          variant === "grid"
+            ? "(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 18vw"
+            : "144px"
+        }
+        className={cn(
+          "object-cover transition-transform duration-slow ease-out-quart",
+          !soldOut && "group-hover:scale-[1.04]"
         )}
-        {isOrganic && (
-          <span className="absolute left-3 bottom-3 bg-green-50 text-green-700 text-xs font-medium px-2 py-1 rounded-full">
-            Organic
-          </span>
-        )}
-        {isFresh && !isOrganic && (
-          <span className="absolute left-3 bottom-3 bg-blue-50 text-blue-700 text-xs font-medium px-2 py-1 rounded-full">
-            Fresh
-          </span>
-        )}
+      />
+
+      <div className="pointer-events-none absolute left-2.5 top-2.5 flex flex-col items-start gap-1.5">
+        {discountPercent > 0 ? (
+          <Badge tone="solid-danger" size="sm" className="rounded-full font-bold">
+            −{discountPercent}%
+          </Badge>
+        ) : null}
+        {isNew ? (
+          <Badge tone="solid" size="sm" className="rounded-full">
+            New
+          </Badge>
+        ) : null}
+        {bestseller && !isNew ? (
+          <Badge tone="solid-accent" size="sm" className="rounded-full">
+            Bestseller
+          </Badge>
+        ) : null}
       </div>
 
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1">
-            <h3 className="text-sm sm:text-base font-semibold text-gray-800 leading-tight">
+      {isOrganic ? (
+        <span className="pointer-events-none absolute bottom-2.5 left-2.5">
+          <Badge tone="brand" size="sm" icon={Leaf} className="rounded-full bg-surface/90 backdrop-blur">
+            Organic
+          </Badge>
+        </span>
+      ) : null}
+
+      {soldOut ? (
+        <div className="absolute inset-0 grid place-items-center bg-surface/70 backdrop-blur-[1px]">
+          <span className="rounded-full bg-surface px-3 py-1.5 text-xs font-semibold text-content-strong shadow-sm">
+            Out of stock
+          </span>
+        </div>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={() => setWishlisted((value) => !value)}
+        aria-label={wishlisted ? `Remove ${name} from saved items` : `Save ${name} for later`}
+        aria-pressed={wishlisted}
+        className={cn(
+          "absolute right-2.5 top-2.5 z-20 grid h-8 w-8 place-items-center rounded-full",
+          "bg-surface/90 shadow-sm backdrop-blur transition-colors duration-fast",
+          "hover:bg-surface",
+          wishlisted ? "text-danger" : "text-content-muted hover:text-content-strong"
+        )}
+      >
+        <Heart className="h-4 w-4" fill={wishlisted ? "currentColor" : "none"} aria-hidden="true" />
+      </button>
+    </div>
+  );
+
+  const cartControl = soldOut ? (
+    <button
+      type="button"
+      disabled
+      className="h-10 shrink-0 cursor-not-allowed rounded-xl bg-surface-sunken px-4 text-xs font-semibold text-content-muted"
+    >
+      Sold out
+    </button>
+  ) : quantity > 0 ? (
+    <QuantityStepper
+      size="sm"
+      value={quantity}
+      max={stock}
+      onChange={(next) => setQuantity(id, next)}
+      onRemove={() => removeItem(id)}
+      className="relative z-20 shrink-0"
+    />
+  ) : (
+    <button
+      type="button"
+      onClick={add}
+      aria-label={`Add ${name} to cart, ${formatPrice(price)}`}
+      className={cn(
+        "relative z-20 inline-flex h-10 shrink-0 items-center gap-2 rounded-full border-2 px-4",
+        "border-brand-600 bg-surface text-sm font-bold text-brand-700",
+        "transition-[background-color,color,box-shadow,transform] duration-fast",
+        "hover:bg-brand-600 hover:text-primary-content hover:shadow-brand-glow active:scale-95",
+        "dark:text-brand-300 dark:hover:text-primary-content"
+      )}
+    >
+      <ShoppingBasket className="h-4 w-4 shrink-0" aria-hidden="true" />
+      <span className="tabular">{formatPrice(price)}</span>
+    </button>
+  );
+
+  if (variant === "list") {
+    return (
+      <article
+        style={style}
+        className={cn(
+          "group relative flex gap-4 rounded-2xl border border-line bg-surface p-3",
+          "transition-shadow duration-base ease-out-quart hover:shadow-md",
+          className
+        )}
+      >
+        {media}
+
+        <div className="flex min-w-0 flex-1 flex-col">
+          <p className="text-2xs font-medium uppercase tracking-wider text-content-muted">
+            {categoryLabel}
+          </p>
+          <h3 className="mt-1 text-sm font-semibold text-content-strong sm:text-base">
+            <Link href={href} className="after:absolute after:inset-0 after:content-['']">
               {name}
-            </h3>
-            <p className="text-xs text-gray-500 mt-1 line-clamp-2">{description}</p>
+            </Link>
+          </h3>
 
-            <div className="mt-3 flex items-center gap-2 text-xs">
-              <div className="flex items-center gap-1 text-yellow-400">
-                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                  <path d="M12 .587l3.668 7.431L23.6 9.587l-5.4 5.264L19.335 24 12 19.897 4.665 24l1.134-9.149L.4 9.587l7.932-1.569L12 .587z"/>
-                </svg>
-                <span className="text-gray-700 font-medium">{rating ?? "—"}</span>
-                <span className="text-gray-400">({reviewCount ?? 0})</span>
-              </div>
-            </div>
+          {description ? (
+            <p className="mt-1 line-clamp-2 text-xs text-content-muted sm:text-sm">{description}</p>
+          ) : null}
 
-            <div className="mt-3 flex items-center gap-3">
-              <div>
-                <div className="text-lg font-bold text-gray-900">
-                  {priceFormatted(price)}
-                </div>
-                {originalPrice && originalPrice > price && (
-                  <div className="text-xs text-gray-400 line-through">
-                    {priceFormatted(originalPrice)}
-                  </div>
-                )}
-              </div>
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <Rating value={rating} count={reviewCount} size="sm" />
+            {unit ? <span className="text-xs text-content-muted">{unit}</span> : null}
+            <StockNote stock={stock} />
+          </div>
 
-              <div className="ml-auto text-right text-xs">
-                <div className={`px-2 py-1 rounded-full font-medium ${stock > 0 ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-400'}`}>
-                  {stock > 0 ? `${stock} in stock` : 'Out of stock'}
-                </div>
-                {deliveryTime && <div className="text-[11px] text-gray-500 mt-1">{deliveryTime}</div>}
-              </div>
-            </div>
-
-            <div className="mt-3 flex flex-wrap gap-2">
-              {tags.slice(0, 4).map((t) => (
-                <span key={t} className="text-[11px] px-2 py-1 bg-gray-50 border border-gray-100 rounded-full text-gray-600">
-                  {t}
+          <div className="mt-auto flex items-end justify-between gap-3 pt-3">
+            <div>
+              <span className="tabular text-lg font-semibold text-content-strong">
+                {formatPrice(price)}
+              </span>
+              {originalPrice > price ? (
+                <span className="tabular ml-2 text-xs text-content-muted line-through">
+                  {formatPrice(originalPrice)}
                 </span>
-              ))}
+              ) : null}
             </div>
-
-            <div className="mt-4 flex items-center gap-3">
-              {vendor?.logo && (
-                <div className="w-7 h-7 rounded-full overflow-hidden bg-white border border-gray-100">
-                  <Image src={vendor.logo} alt={vendor.name} width={28} height={28} className="object-cover" />
-                </div>
-              )}
-              <div className="text-xs text-gray-600">
-                <div className="font-medium text-gray-800">{vendor?.name}</div>
-                {vendor?.rating && <div className="text-[11px] text-gray-500">{vendor.rating} ★ vendor</div>}
-              </div>
-            </div>
+            {cartControl}
           </div>
         </div>
+      </article>
+    );
+  }
 
-        <div className="mt-4 flex items-center gap-3">
-          <button
-            onClick={addToCart}
-            disabled={adding || stock <= 0}
-            className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${
-              stock > 0
-                ? "bg-green-600 hover:bg-green-700 text-white"
-                : "bg-gray-100 text-gray-400 cursor-not-allowed"
-            }`}
-          >
-            {adding ? "Adding…" : stock > 0 ? "Add to cart" : "Out of stock"}
-          </button>
+  return (
+    <article
+      style={style}
+      className={cn(
+        "group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-surface",
+        "transition-[box-shadow,border-color,transform] duration-base ease-out-quart",
+        "hover:-translate-y-0.5 hover:border-line-strong hover:shadow-lg",
+        className
+      )}
+    >
+      {media}
 
-          <a
-            href={`/products/${slug || id}`}
-            className="text-sm text-green-600 border border-green-100 px-3 py-2 rounded-lg hover:bg-green-50"
-          >
-            View
-          </a>
+      <div className="flex flex-1 flex-col p-3.5">
+        <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-content-strong">
+          <Link href={href} className="after:absolute after:inset-0 after:content-['']">
+            {name}
+          </Link>
+        </h3>
+
+        <p className="mt-1 text-xs text-content-muted">{unit}</p>
+
+        <div className="mt-2 flex items-center gap-2">
+          <Rating value={rating} count={reviewCount} size="sm" />
+        </div>
+
+        {deliveryTime ? (
+          <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-content-muted">
+            <Timer className="h-3 w-3 shrink-0" aria-hidden="true" />
+            {deliveryTime}
+          </p>
+        ) : null}
+
+        {/*
+          The price is the button. The number a shopper is already evaluating
+          becomes the tap target, which removes a separate control from the
+          card, enlarges the hit area, and turns "decide" and "act" into one
+          motion instead of two.
+        */}
+        <div className="mt-auto flex items-center justify-between gap-2 pt-4">
+          <div className="min-w-0">
+            {originalPrice > price ? (
+              <div className="tabular text-xs text-content-muted line-through">
+                {formatPrice(originalPrice)}
+              </div>
+            ) : (
+              <StockNote stock={stock} />
+            )}
+          </div>
+          {cartControl}
         </div>
       </div>
     </article>
+  );
+}
+
+export function ProductCardSkeleton({ variant = "grid" }) {
+  if (variant === "list") {
+    return (
+      <div className="flex gap-4 rounded-2xl border border-line bg-surface p-3">
+        <Skeleton className="aspect-square w-28 rounded-xl sm:w-36" />
+        <div className="flex-1 space-y-2 py-1">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="mt-4 h-6 w-24" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+      <Skeleton className="aspect-product w-full rounded-none" />
+      <div className="space-y-2.5 p-3.5">
+        <Skeleton className="h-4 w-4/5" />
+        <Skeleton className="h-3 w-16" />
+        <Skeleton className="h-3 w-24" />
+        <div className="flex items-center justify-between pt-2">
+          <Skeleton className="h-5 w-20" />
+          <Skeleton className="h-9 w-16 rounded-xl" />
+        </div>
+      </div>
+    </div>
   );
 }

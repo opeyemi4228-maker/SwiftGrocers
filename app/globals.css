@@ -2,28 +2,390 @@
 @tailwind components;
 @tailwind utilities;
 
-* {
-    scroll-behavior: smooth;
-}
+/* ==========================================================================
+   SwiftGrocers Design System — Tokens
+   Values are raw HSL channels so Tailwind can apply opacity:
+   `hsl(var(--token) / <alpha-value>)`
+   ========================================================================== */
 
 @layer base {
-    input[type="number"]::-webkit-inner-spin-button,
-    input[type="number"]::-webkit-outer-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
+  :root {
+    /* --- Brand: verdant green ------------------------------------------ */
+    --brand-50: 150 52% 96%;
+    --brand-100: 150 48% 90%;
+    --brand-200: 151 44% 80%;
+    --brand-300: 152 40% 66%;
+    --brand-400: 154 40% 51%;
+    --brand-500: 156 52% 39%;
+    --brand-600: 158 62% 30%;
+    --brand-700: 160 60% 24%;
+    --brand-800: 162 55% 19%;
+    --brand-900: 164 50% 14%;
+    --brand-950: 166 55% 8%;
+
+    /* --- Accent: ripe citrus (promotions, highlights) ------------------- */
+    --accent-50: 40 100% 96%;
+    --accent-100: 40 96% 89%;
+    --accent-200: 38 96% 78%;
+    --accent-300: 36 95% 66%;
+    --accent-400: 34 95% 58%;
+    --accent-500: 32 94% 50%;
+    --accent-600: 28 92% 44%;
+    --accent-700: 24 88% 36%;
+
+    /* --- Neutrals: warm gray (reads organic, not clinical) -------------- */
+    --neutral-0: 0 0% 100%;
+    --neutral-50: 40 30% 98%;
+    --neutral-100: 40 22% 96%;
+    --neutral-200: 38 16% 91%;
+    --neutral-300: 36 13% 84%;
+    --neutral-400: 34 10% 66%;
+    --neutral-500: 32 8% 50%;
+    --neutral-600: 30 9% 39%;
+    --neutral-700: 28 11% 29%;
+    --neutral-800: 26 13% 19%;
+    --neutral-900: 24 16% 12%;
+    --neutral-950: 22 20% 7%;
+
+    /* --- Status -------------------------------------------------------- */
+    --success: 152 58% 34%;
+    --success-soft: 150 50% 94%;
+    --warning: 38 92% 46%;
+    --warning-soft: 40 96% 94%;
+    --danger: 356 68% 48%;
+    --danger-soft: 356 80% 96%;
+    --info: 212 78% 44%;
+    --info-soft: 210 90% 96%;
+
+    /* --- Semantic surfaces --------------------------------------------- */
+    --canvas: var(--neutral-50);
+    --surface: var(--neutral-0);
+    --surface-raised: var(--neutral-0);
+    --surface-sunken: var(--neutral-100);
+    --surface-inverse: var(--neutral-900);
+    --overlay: 24 16% 12%;
+
+    --content-strong: var(--neutral-900);
+    --content: var(--neutral-700);
+    --content-muted: var(--neutral-500);
+    --content-inverse: var(--neutral-50);
+
+    --line: var(--neutral-200);
+    --line-strong: var(--neutral-300);
+
+    --primary: var(--brand-600);
+    --primary-hover: var(--brand-700);
+    --primary-content: 0 0% 100%;
+    --ring: var(--brand-500);
+
+    /* --- Elevation ------------------------------------------------------ */
+    --shadow-color: 30 20% 20%;
+    --shadow-xs: 0 1px 2px 0 hsl(var(--shadow-color) / 0.06);
+    --shadow-sm: 0 1px 3px 0 hsl(var(--shadow-color) / 0.07),
+      0 1px 2px -1px hsl(var(--shadow-color) / 0.05);
+    --shadow-md: 0 4px 12px -2px hsl(var(--shadow-color) / 0.09),
+      0 2px 6px -2px hsl(var(--shadow-color) / 0.05);
+    --shadow-lg: 0 12px 28px -6px hsl(var(--shadow-color) / 0.12),
+      0 4px 10px -4px hsl(var(--shadow-color) / 0.06);
+    --shadow-xl: 0 24px 48px -12px hsl(var(--shadow-color) / 0.18),
+      0 8px 20px -8px hsl(var(--shadow-color) / 0.08);
+    --shadow-ring: 0 0 0 1px hsl(var(--line) / 1);
+
+    /* --- Motion --------------------------------------------------------- */
+    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --duration-fast: 130ms;
+    --duration-base: 220ms;
+    --duration-slow: 380ms;
+
+    /* --- Layout ---------------------------------------------------------
+       Header is sticky, so these values only drive scroll-padding and the
+       space reserved for the mobile tab bar — nothing is positioned by them. */
+    --header-height: 7rem;
+    --tabbar-height: 4rem;
+  }
+
+  @media (min-width: 1024px) {
+    :root {
+      --header-height: 8rem;
+      --tabbar-height: 0rem;
     }
   }
 
-::-webkit-scrollbar {
-  display: none;
+  .dark {
+    --canvas: var(--neutral-950);
+    --surface: 24 14% 10%;
+    --surface-raised: 24 12% 13%;
+    --surface-sunken: 22 18% 7%;
+    --surface-inverse: var(--neutral-50);
+    --overlay: 22 24% 4%;
+
+    --content-strong: var(--neutral-50);
+    --content: 36 10% 78%;
+    --content-muted: 34 8% 58%;
+    --content-inverse: var(--neutral-900);
+
+    --line: 26 10% 21%;
+    --line-strong: 26 9% 30%;
+
+    --primary: var(--brand-500);
+    --primary-hover: var(--brand-400);
+    --primary-content: 165 60% 6%;
+    --ring: var(--brand-400);
+
+    --success-soft: 152 40% 14%;
+    --warning-soft: 38 50% 14%;
+    --danger-soft: 356 40% 16%;
+    --info-soft: 212 45% 15%;
+
+    --shadow-color: 20 40% 2%;
+    --shadow-xs: 0 1px 2px 0 hsl(var(--shadow-color) / 0.5);
+    --shadow-sm: 0 1px 3px 0 hsl(var(--shadow-color) / 0.55);
+    --shadow-md: 0 4px 12px -2px hsl(var(--shadow-color) / 0.6);
+    --shadow-lg: 0 12px 28px -6px hsl(var(--shadow-color) / 0.65);
+    --shadow-xl: 0 24px 48px -12px hsl(var(--shadow-color) / 0.7);
+  }
 }
 
-:root {
-  --navbar-height: 72px;
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+@layer base {
+  * {
+    @apply border-line;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    scroll-padding-top: calc(var(--header-height) + 1rem);
+  }
+
+  body {
+    @apply bg-canvas text-content antialiased;
+    font-feature-settings: "cv11", "ss01";
+    font-variant-ligatures: contextual;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
+    @apply font-display text-content-strong;
+    text-wrap: balance;
+    letter-spacing: -0.02em;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* One consistent focus treatment everywhere. Pointer users never see it. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-canvas;
+    border-radius: 0.375rem;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="search"]::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+  }
+
+  ::selection {
+    @apply bg-brand-200/70 text-brand-900;
+  }
+
+  /* Scrollbars are styled rather than hidden — hiding them removes the only
+     affordance telling users a region scrolls. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--neutral-300)) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--neutral-300));
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--neutral-400));
+  }
 }
 
-@media (min-width: 768px) {
-  :root {
-    --navbar-height: 96px;
+/* ==========================================================================
+   Component utilities
+   ========================================================================== */
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-[90rem] px-4 sm:px-6 lg:px-10;
+  }
+
+  .container-prose {
+    @apply mx-auto w-full max-w-3xl px-4 sm:px-6;
+  }
+
+  /* Edge-to-edge horizontal rail that keeps content aligned to the grid. */
+  .rail {
+    @apply flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4;
+    scrollbar-width: none;
+    scroll-padding-inline: 1rem;
+  }
+
+  .rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .rail > * {
+    @apply snap-start;
+  }
+
+  .surface-card {
+    @apply rounded-2xl border border-line bg-surface shadow-sm;
+  }
+
+  .glass {
+    @apply bg-surface/80 backdrop-blur-xl backdrop-saturate-150;
+  }
+
+  .link-underline {
+    @apply relative inline-flex items-center gap-1 font-medium text-brand-700 transition-colors hover:text-brand-800 dark:text-brand-300 dark:hover:text-brand-200;
+    text-underline-offset: 3px;
+  }
+
+  .link-underline:hover {
+    @apply underline;
+  }
+
+  /* Loading placeholder. Pairs with `animate-shimmer`. */
+  .skeleton {
+    @apply relative overflow-hidden rounded-lg bg-surface-sunken;
+  }
+
+  .skeleton::after {
+    content: "";
+    @apply absolute inset-0 -translate-x-full;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--neutral-0) / 0.55),
+      transparent
+    );
+    animation: shimmer 1.6s infinite;
+  }
+
+  .dark .skeleton::after {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--neutral-0) / 0.06),
+      transparent
+    );
+  }
+
+  /* Numeric data (prices, quantities, totals) should not reflow while it
+     updates, so tabular figures are the default for money. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Dual-thumb range: two stacked inputs. The tracks ignore the pointer so
+     whichever thumb is nearer the cursor receives the drag. */
+  .range-input {
+    @apply pointer-events-none absolute inset-x-0 top-0 h-2 w-full appearance-none bg-transparent;
+  }
+
+  .range-input:focus {
+    @apply outline-none;
+  }
+
+  .range-input::-webkit-slider-thumb {
+    @apply pointer-events-auto h-5 w-5 cursor-grab appearance-none rounded-full border-2 border-brand-600 bg-surface;
+    box-shadow: var(--shadow-md);
+  }
+
+  .range-input:active::-webkit-slider-thumb {
+    @apply cursor-grabbing;
+    transform: scale(1.08);
+  }
+
+  .range-input:focus-visible::-webkit-slider-thumb {
+    @apply ring-2 ring-ring ring-offset-2 ring-offset-canvas;
+  }
+
+  .range-input::-moz-range-thumb {
+    @apply pointer-events-auto h-5 w-5 cursor-grab appearance-none rounded-full border-2 border-brand-600 bg-surface;
+    box-shadow: var(--shadow-md);
+  }
+
+  .range-input::-moz-range-track {
+    @apply bg-transparent;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .clip-fade-r {
+    mask-image: linear-gradient(to right, black 85%, transparent 100%);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ==========================================================================
+   Accessibility: honour the OS "reduce motion" setting globally.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

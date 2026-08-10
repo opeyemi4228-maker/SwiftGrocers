@@ -1,472 +1,271 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Mail, Phone, MapPin, Clock, Send, MessageCircle, Headphones, Gift,
-  PhoneIncoming, Map, CheckCircle2, AlertCircle, Globe,
-  Facebook, Twitter, Instagram, Linkedin, Youtube
-} from 'lucide-react';
-import Footer from '@/components/Footer';
-import Navbar from '@/components/Navbar';
+import React, { useState } from "react";
+import Link from "next/link";
+import toast from "react-hot-toast";
+import { Clock, Headphones, Mail, MapPin, MessageCircle, Phone, Send } from "lucide-react";
+import { CONTACT_DETAILS } from "@/lib/navigation";
+import Button from "@/components/ui/Button";
+import Input, { Field, Select, Textarea } from "@/components/ui/Input";
+import { Section, SectionHeader } from "@/components/ui/Section";
+import Card from "@/components/ui/Card";
 
-/**
- * Swift Grocers — Contact Us (Upgraded)
- * - Montserrat-like font usage via tailwind class font-[Montserrat]
- * - Framer Motion entrances & micro-interactions
- * - Animated cards, improved hero, animated FAQ, accessible form with basic validation
- * - Reusable small components for clarity
- *
- * Single-file, production-ready React component suitable for Next.js / app router.
- */
-
-const contactMethods = [
+const CHANNELS = [
   {
-    id: 1,
-    Icon: Phone,
-    title: 'Call Us',
-    description: 'Mon-Fri from 8am to 6pm',
-    value: '+234 (0) 803 123 4567',
-    link: 'tel:+2348031234567',
-    accent: 'from-blue-500 to-blue-600',
-    bg: 'bg-blue-50',
-    iconColor: 'text-blue-600'
+    icon: MessageCircle,
+    title: "Live chat",
+    detail: "Fastest — usually answered in under two minutes",
+    action: "Start a chat",
+    href: "#contact-form",
   },
   {
-    id: 2,
-    Icon: MessageCircle,
-    title: 'Live Chat',
-    description: 'Chat with our support team',
-    value: 'Start a conversation',
-    link: '#',
-    accent: 'from-green-500 to-green-600',
-    bg: 'bg-green-50',
-    iconColor: 'text-green-600'
+    icon: Phone,
+    title: "Call us",
+    detail: CONTACT_DETAILS.phone,
+    action: "Call now",
+    href: `tel:${CONTACT_DETAILS.phone.replace(/\s/g, "")}`,
   },
   {
-    id: 3,
-    Icon: Mail,
-    title: 'Email Us',
-    description: "We'll respond within 24 hours",
-    value: 'support@swiftgrocers.ng',
-    link: 'mailto:support@swiftgrocers.ng',
-    accent: 'from-purple-500 to-purple-600',
-    bg: 'bg-purple-50',
-    iconColor: 'text-purple-600'
+    icon: Mail,
+    title: "Email",
+    detail: CONTACT_DETAILS.email,
+    action: "Send an email",
+    href: `mailto:${CONTACT_DETAILS.email}`,
   },
-  {
-    id: 4,
-    Icon: MapPin,
-    title: 'Visit Us',
-    description: 'Come to our office',
-    value: 'View on Google Maps',
-    link: '#',
-    accent: 'from-orange-500 to-orange-600',
-    bg: 'bg-orange-50',
-    iconColor: 'text-orange-600'
-  }
 ];
 
-const locations = [
- 
+const FAQS = [
   {
-    id: 2,
-    city: 'Abuja',
-    address: 'Prime Mall, Plot C110, 69 Road, 6th Avenue, Abuja',
-    phone: '+234 908 720 6986',
-    hours: 'Mon-Sat: 8:00 AM - 8:00 PM',
-    image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=800'
+    q: "Something arrived damaged or not fresh. What now?",
+    a: "Report it from the order page within 24 hours and we refund that line in full. No photos, no back-and-forth — we take your word for it.",
   },
-  
+  {
+    q: "Can I change my delivery window after ordering?",
+    a: "Yes, any time before a picker starts on your basket. You will get a notification when that happens, usually 45 minutes before the window.",
+  },
+  {
+    q: "Do you deliver outside Lagos, Abuja and Port Harcourt?",
+    a: "Not yet. We are adding Ibadan and Benin City next quarter — leave your email and we will tell you when your area opens.",
+  },
+  {
+    q: "Is there a minimum order?",
+    a: "No minimum. Delivery is ₦1,500 under ₦25,000 and free above it.",
+  },
 ];
 
-const faqs = [
-  {
-    question: 'What are your delivery hours?',
-    answer: 'We deliver Monday to Saturday from 8 AM to 8 PM. Same-day delivery is available for orders placed before 2 PM.'
-  },
-  {
-    question: 'Do you deliver to my area?',
-    answer: 'We currently deliver across Lagos, Abuja, and Port Harcourt. Enter your postal code at checkout to confirm delivery availability.'
-  },
-  {
-    question: 'What is your return policy?',
-    answer: 'We offer hassle-free returns within 24 hours of delivery. Fresh produce and perishables must be reported within 2 hours of delivery.'
-  },
-  {
-    question: 'How can I track my order?',
-    answer: 'Once your order is dispatched, you\'ll receive a tracking link via SMS and email. You can also track orders in your account dashboard.'
-  }
+const SUBJECTS = [
+  "An order I placed",
+  "Delivery or timing",
+  "A refund or return",
+  "Becoming a vendor",
+  "Something else",
 ];
 
-export default function ContactUsPage() {
-  // form state
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    subject: '',
-    message: '',
-    category: 'general'
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState(null); // 'success' | 'error' | null
-  const [openFaq, setOpenFaq] = useState(null);
-  const formRef = useRef(null);
+export default function ContactPage() {
+  const [form, setForm] = useState({ name: "", email: "", subject: SUBJECTS[0], message: "" });
+  const [errors, setErrors] = useState({});
+  const [sending, setSending] = useState(false);
 
-  // small entrance animation variants
-  const cardVariant = { hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } };
+  const set = (key) => (event) => {
+    setForm((previous) => ({ ...previous, [key]: event.target.value }));
+    setErrors((previous) => ({ ...previous, [key]: undefined }));
+  };
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
-  // validation helper
   const validate = () => {
-    if (!formData.name.trim()) return 'Please enter your name.';
-    if (!formData.email.trim() || !/^\S+@\S+\.\S+$/.test(formData.email)) return 'Please enter a valid email.';
-    if (!formData.subject.trim()) return 'Please enter a subject.';
-    if (!formData.message.trim() || formData.message.length < 10) return 'Message should be at least 10 characters.';
-    return null;
+    const next = {};
+    if (!form.name.trim()) next.name = "Tell us who you are.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) next.email = "Enter a valid email address.";
+    if (form.message.trim().length < 12) next.message = "A little more detail helps us help you.";
+    setErrors(next);
+    return Object.keys(next).length === 0;
   };
 
-  const handleChange = (e) => {
-    setFormData(s => ({ ...s, [e.target.name]: e.target.value }));
-  };
+  const submit = async (event) => {
+    event.preventDefault();
+    if (!validate()) return;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const error = validate();
-    if (error) {
-      setSubmitStatus({ type: 'error', message: error });
-      setTimeout(() => setSubmitStatus(null), 4500);
-      return;
-    }
-
-    setIsSubmitting(true);
-    setSubmitStatus(null);
-
-    // Simulated API call (replace with real API integration)
-    try {
-      await new Promise(r => setTimeout(r, 1400));
-      setIsSubmitting(false);
-      setSubmitStatus({ type: 'success', message: 'Message sent — we\'ll get back to you shortly.' });
-      setFormData({ name: '', email: '', phone: '', subject: '', message: '', category: 'general' });
-
-      // auto-clear notification
-      setTimeout(() => setSubmitStatus(null), 5000);
-      // bring focus back to top of form
-      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } catch (err) {
-      setIsSubmitting(false);
-      setSubmitStatus({ type: 'error', message: 'Something went wrong. Please try again.' });
-      setTimeout(() => setSubmitStatus(null), 5000);
-    }
+    setSending(true);
+    // No messaging backend is wired up yet; this stands in for that call.
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    setSending(false);
+    setForm({ name: "", email: "", subject: SUBJECTS[0], message: "" });
+    toast.success("Message sent. We reply within one working day.");
   };
 
   return (
     <>
-    <Navbar />
-    <div className="min-h-screen bg-gradient-to-b from-green-50 via-white to-gray-50 font-[Montserrat] text-gray-800">
-      {/* HERO */}
-      <motion.section
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="relative bg-gradient-to-r from-green-700 to-emerald-600 text-white overflow-hidden"
-      >
-        <div className="absolute inset-0 opacity-10 pointer-events-none">
-          <div className="absolute -left-10 -top-10 w-96 h-96 rounded-full bg-white blur-3xl opacity-6" />
-          <div className="absolute right-6 bottom-6 w-80 h-80 rounded-full bg-yellow-300 blur-3xl opacity-6" />
+      <header className="border-b border-line bg-brand-mesh">
+        <div className="container-page py-14 sm:py-20">
+          <nav aria-label="Breadcrumb" className="mb-4 text-xs text-content-muted">
+            <Link href="/" className="transition-colors hover:text-content-strong">
+              Home
+            </Link>
+            <span className="mx-1.5" aria-hidden="true">
+              /
+            </span>
+            <span className="text-content-strong">Contact</span>
+          </nav>
+
+          <h1 className="max-w-2xl text-4xl font-bold sm:text-5xl">
+            Talk to someone who can actually fix it
+          </h1>
+          <p className="mt-4 max-w-xl text-lg text-content-muted">
+            Real people in Abuja, 7 AM to 9 PM daily. No ticket queues, no bots pretending to be
+            agents.
+          </p>
+
+          <ul className="mt-10 grid gap-4 sm:grid-cols-3">
+            {CHANNELS.map((channel) => (
+              <li key={channel.title}>
+                <Card padded="md" className="h-full">
+                  <channel.icon
+                    className="h-5 w-5 text-brand-600 dark:text-brand-400"
+                    strokeWidth={1.75}
+                    aria-hidden="true"
+                  />
+                  <h2 className="mt-4 text-sm font-semibold text-content-strong">
+                    {channel.title}
+                  </h2>
+                  <p className="mt-1 text-sm text-content-muted">{channel.detail}</p>
+                  <a
+                    href={channel.href}
+                    className="mt-3 inline-block text-sm font-semibold text-brand-700 hover:underline dark:text-brand-300"
+                  >
+                    {channel.action}
+                  </a>
+                </Card>
+              </li>
+            ))}
+          </ul>
         </div>
+      </header>
 
-        <div className="max-w-7xl mx-auto px-6 py-20 relative z-10">
-          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12 justify-between">
-            <div className="max-w-2xl">
-              <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-                <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur px-3 py-1 rounded-full text-sm font-medium">
-                  <Headphones className="w-4 h-4 text-white" />
-                  24/7 Support
-                </div>
-                <h1 className="text-4xl md:text-5xl font-extrabold mt-4 leading-tight">
-                  Contact Swift Grocers
-                </h1>
-                <p className="mt-4 text-lg text-white/90">
-                  We’re here to help — whether it’s an order question, vendor inquiry, or product feedback.
-                  Use the form or any of the contact channels below.
-                </p>
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <motion.a
-                    whileHover={{ scale: 1.03 }}
-                    href="tel:+2348031234567"
-                    className="inline-flex items-center gap-2 bg-white text-green-700 font-semibold px-4 py-3 rounded-full shadow"
-                  >
-                    <PhoneIncoming className="w-4 h-4" />
-                    Call Now
-                  </motion.a>
-                  <motion.a
-                    whileHover={{ scale: 1.03 }}
-                    href="#contact-form"
-                    className="inline-flex items-center gap-2 bg-white/20 border border-white/30 text-white px-4 py-3 rounded-full"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    Message Us
-                  </motion.a>
-                </div>
-              </motion.div>
-            </div>
+      <Section size="md" className="container-page">
+        <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
+          {/* --- Form --- */}
+          <div className="lg:col-span-7">
+            <h2 id="contact-form" className="scroll-mt-32 text-2xl font-semibold">
+              Send us a message
+            </h2>
+            <p className="mt-2 text-base text-content-muted">
+              We answer every message within one working day, usually much sooner.
+            </p>
 
-            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.25 }} className="w-full md:w-96">
-              <div className="bg-white rounded-2xl p-5 shadow-xl">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-green-50 flex items-center justify-center">
-                    <Headphones className="w-6 h-6 text-green-600" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold text-gray-900">Avg response time</div>
-                    <div className="text-lg font-bold text-green-600">~2 hours</div>
-                    <div className="text-sm text-gray-500">Mon–Sat, 8:00–20:00</div>
-                  </div>
-                </div>
+            <form onSubmit={submit} noValidate className="mt-8 space-y-5">
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field label="Your name" htmlFor="name" required error={errors.name}>
+                  <Input value={form.name} onChange={set("name")} autoComplete="name" placeholder="Amaka Nwosu" />
+                </Field>
 
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 rounded-lg p-3 text-center">
-                    <div className="text-sm text-gray-500">Satisfaction</div>
-                    <div className="text-lg font-semibold text-green-700">98%</div>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3 text-center">
-                    <div className="text-sm text-gray-500">Support</div>
-                    <div className="text-lg font-semibold text-green-700">24/7</div>
-                  </div>
-                </div>
+                <Field label="Email address" htmlFor="email" required error={errors.email}>
+                  <Input
+                    type="email"
+                    value={form.email}
+                    onChange={set("email")}
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                  />
+                </Field>
               </div>
-            </motion.div>
-          </div>
-        </div>
-      </motion.section>
 
-      {/* CONTACT METHODS */}
-      <section className="max-w-7xl mx-auto px-6 -mt-12 relative z-20">
-        <motion.div initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.08 } } }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {contactMethods.map((m, i) => {
-            const { Icon } = m;
-            return (
-              <motion.a
-                key={m.id}
-                href={m.link}
-                variants={cardVariant}
-                whileHover={{ translateY: -6, boxShadow: '0 10px 30px rgba(2,6,23,0.08)' }}
-                className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-transform duration-200 flex flex-col gap-3"
-                aria-label={m.title}
+              <Field label="What is this about?" htmlFor="subject">
+                <Select value={form.subject} onChange={set("subject")}>
+                  {SUBJECTS.map((subject) => (
+                    <option key={subject}>{subject}</option>
+                  ))}
+                </Select>
+              </Field>
+
+              <Field
+                label="Message"
+                htmlFor="message"
+                required
+                error={errors.message}
+                hint="Include your order number if you have one — it gets you a faster answer."
               >
-                <div className={`w-14 h-14 rounded-lg flex items-center justify-center ${m.bg}`}>
-                  <Icon className={`w-7 h-7 ${m.iconColor}`} />
-                </div>
-                <div className="flex-1">
-                  <div className="text-lg font-semibold text-gray-900">{m.title}</div>
-                  <div className="text-sm text-gray-500 mt-1">{m.description}</div>
-                </div>
-                <div className="text-sm font-medium text-transparent bg-clip-text bg-gradient-to-r py-1 from-transparent to-transparent" style={{ backgroundImage: `linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,0))` }}>
-                  <span className={`bg-clip-text text-transparent bg-gradient-to-r ${m.accent}`}>{m.value}</span>
-                </div>
-              </motion.a>
-            );
-          })}
-        </motion.div>
-      </section>
+                <Textarea
+                  value={form.message}
+                  onChange={set("message")}
+                  rows={6}
+                  placeholder="Tell us what happened…"
+                />
+              </Field>
 
-      {/* MAIN CONTENT */}
-      <section className="max-w-7xl mx-auto px-6 py-14">
-        <div className="grid lg:grid-cols-2 gap-10">
-          {/* CONTACT FORM */}
-          <motion.div id="contact-form" ref={formRef} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="bg-white rounded-3xl shadow-xl p-8 lg:p-10">
-            <div className="flex items-start justify-between gap-6">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">Send us a message</h2>
-                <p className="text-sm text-gray-600 mt-1">Tell us how we can help and we’ll respond quickly.</p>
-              </div>
-              <div className="hidden sm:flex items-center gap-2 text-sm text-gray-500">
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
-                Secure & private
-              </div>
-            </div>
-
-            <AnimatePresence>
-              {submitStatus?.type === 'success' && (
-                <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="mt-6 bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-                  <div>
-                    <div className="font-semibold text-green-900">{submitStatus.message}</div>
-                    <div className="text-sm text-green-700">We’ll respond within 24 hours.</div>
-                  </div>
-                </motion.div>
-              )}
-              {submitStatus?.type === 'error' && (
-                <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="mt-6 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-                  <div>
-                    <div className="font-semibold text-red-900">{submitStatus.message}</div>
-                    <div className="text-sm text-red-700">Please correct and try again.</div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">What can we help you with?</label>
-                <select name="category" value={formData.category} onChange={handleChange} className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500">
-                  <option value="general">General Inquiry</option>
-                  <option value="order">Order Support</option>
-                  <option value="delivery">Delivery Issues</option>
-                  <option value="product">Product Questions</option>
-                  <option value="vendor">Become a Vendor</option>
-                  <option value="feedback">Feedback</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Full name *</label>
-                  <input name="name" value={formData.name} onChange={handleChange} required className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Jane Doe" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
-                  <input name="email" type="email" value={formData.email} onChange={handleChange} required className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="you@domain.com" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                  <input name="phone" value={formData.phone} onChange={handleChange} className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="+234 803 123 4567" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Subject *</label>
-                  <input name="subject" value={formData.subject} onChange={handleChange} required className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Order #1234" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Message *</label>
-                <textarea name="message" value={formData.message} onChange={handleChange} required rows={6} className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none" placeholder="Tell us about your inquiry..." />
-              </div>
-
-              <div className="flex gap-3">
-                <motion.button whileTap={{ scale: 0.98 }} type="submit" disabled={isSubmitting} className={`flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl py-3 font-semibold flex items-center justify-center gap-3 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02]'}`}>
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      Send Message
-                    </>
-                  )}
-                </motion.button>
-
-                <motion.button whileTap={{ scale: 0.98 }} type="button" onClick={() => { setFormData({ name: '', email: '', phone: '', subject: '', message: '', category: 'general' }); setSubmitStatus(null); }} className="px-4 py-3 rounded-xl border border-gray-200 text-gray-700">
-                  Clear
-                </motion.button>
-              </div>
+              <Button type="submit" size="lg" loading={sending} trailingIcon={Send}>
+                Send message
+              </Button>
             </form>
-          </motion.div>
-
-          {/* SIDE INFO */}
-          <motion.aside initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.06 }} className="space-y-8">
-            {/* Office locations */}
-            <div className="bg-white rounded-3xl shadow-xl p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <Map className="w-6 h-6 text-green-600" />
-                <h3 className="text-xl font-bold">Our Locations</h3>
-              </div>
-              <div className="space-y-4">
-                {locations.map((loc, idx) => (
-                  <motion.div key={loc.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.06 }} className="flex gap-4 items-start border-b border-gray-100 pb-4 last:pb-0 last:border-0">
-                    <img src={loc.image} alt={loc.city} className="w-20 h-20 rounded-xl object-cover" />
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-semibold text-gray-900">{loc.city}</div>
-                          <div className="text-sm text-gray-600">{loc.address}</div>
-                        </div>
-                        <div className="text-sm text-gray-500">{loc.hours}</div>
-                      </div>
-                      <div className="mt-2 text-sm text-gray-600 flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-gray-400" /> {loc.phone}
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-
-            {/* FAQs */}
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-3xl p-6">
-              <h3 className="text-xl font-bold mb-4">Quick Answers</h3>
-              <div className="space-y-3">
-                {faqs.map((f, i) => (
-                  <motion.div key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.06 }}>
-                    <details className="group" open={openFaq === i} onToggle={() => setOpenFaq(openFaq === i ? null : i)}>
-                      <summary className="flex items-center justify-between cursor-pointer bg-white rounded-xl p-3 hover:shadow-sm transition-all">
-                        <span className="font-medium text-gray-900">{f.question}</span>
-                        <AlertCircle className={`w-5 h-5 text-green-600 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
-                      </summary>
-                      <div className="mt-2 px-3 py-3 text-sm text-gray-700 bg-white rounded-xl">
-                        {f.answer}
-                      </div>
-                    </details>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-
-            {/* Social */}
-            <div className="bg-white rounded-3xl p-6 shadow-sm">
-              <h3 className="text-xl font-bold mb-3">Connect With Us</h3>
-              <p className="text-sm text-gray-600 mb-4">Follow for deals, product drops and helpful tips.</p>
-              <div className="flex gap-3">
-                {[ { Icon: Facebook, c: 'bg-blue-600' }, { Icon: Twitter, c: 'bg-sky-500' }, { Icon: Instagram, c: 'bg-pink-500' }, { Icon: Linkedin, c: 'bg-blue-700' }, { Icon: Youtube, c: 'bg-red-600' } ].map((s, idx) => (
-                  <motion.a key={idx} whileHover={{ scale: 1.05 }} href="#" className={`w-10 h-10 rounded-xl flex items-center justify-center text-white ${s.c} transition-all`} aria-label="social">
-                    <s.Icon className="w-4 h-4" />
-                  </motion.a>
-                ))}
-              </div>
-            </div>
-          </motion.aside>
-        </div>
-      </section>
-
-      {/* MAP / LOCATION PLACEHOLDER */}
-      <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className="max-w-7xl mx-auto px-6 pb-20">
-        <div className="bg-gray-100 rounded-3xl overflow-hidden h-96 shadow-inner flex items-center justify-center">
-          <div className="text-center">
-            <MapPin className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <div className="text-lg font-semibold text-gray-700">Find us on the map</div>
-            <div className="text-sm text-gray-500 mt-2">Interactive map (Google Maps / Mapbox) can be embedded here.</div>
           </div>
-        </div>
-      </motion.section>
 
-      {/* CTA BOTTOM */}
-      <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="bg-gradient-to-r from-green-700 to-emerald-600 py-14 mt-6">
-        <div className="max-w-4xl mx-auto px-6 text-center text-white">
-          <h2 className="text-2xl md:text-3xl font-bold">Still have questions?</h2>
-          <p className="mt-2 text-lg text-green-50">Our support team is here to help — reach out via phone or live chat anytime.</p>
-          <div className="mt-6 flex flex-wrap justify-center gap-4">
-            <motion.a whileHover={{ scale: 1.03 }} href="tel:+2348031234567" className="inline-flex items-center gap-2 bg-white text-green-700 px-6 py-3 rounded-full shadow font-semibold">
-              <Phone className="w-4 h-4" /> Call Now
-            </motion.a>
-            <motion.a whileHover={{ scale: 1.03 }} href="#" className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white px-6 py-3 rounded-full font-semibold">
-              <MessageCircle className="w-4 h-4" /> Live Chat
-            </motion.a>
-          </div>
+          {/* --- Details --- */}
+          <aside className="lg:col-span-5">
+            <Card padded="lg" variant="sunken">
+              <h2 className="text-base font-semibold text-content-strong">Where to find us</h2>
+
+              <dl className="mt-5 space-y-5 text-sm">
+                <div className="flex gap-3">
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                  <div>
+                    <dt className="font-medium text-content-strong">Head office</dt>
+                    <dd className="mt-0.5 text-content-muted">{CONTACT_DETAILS.address}</dd>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Clock className="mt-0.5 h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                  <div>
+                    <dt className="font-medium text-content-strong">Support hours</dt>
+                    <dd className="mt-0.5 text-content-muted">
+                      Monday to Sunday, 7:00 AM – 9:00 PM WAT
+                    </dd>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Headphones className="mt-0.5 h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                  <div>
+                    <dt className="font-medium text-content-strong">Vendor enquiries</dt>
+                    <dd className="mt-0.5 text-content-muted">
+                      Selling with us? Mention it in the subject and it routes straight to the
+                      partnerships team.
+                    </dd>
+                  </div>
+                </div>
+              </dl>
+            </Card>
+          </aside>
         </div>
-      </motion.section>
-    </div>
-    <Footer />
+      </Section>
+
+      <Section size="md" className="container-page border-t border-line">
+        <SectionHeader
+          eyebrow="Before you write"
+          title="Answers to the usual questions"
+          description="Most people reaching out are asking one of these four things."
+        />
+
+        <div className="grid gap-4 md:grid-cols-2">
+          {FAQS.map((faq) => (
+            <details
+              key={faq.q}
+              className="group rounded-2xl border border-line bg-surface p-5 transition-colors open:bg-surface-sunken"
+            >
+              <summary className="cursor-pointer list-none text-sm font-semibold text-content-strong marker:hidden">
+                <span className="flex items-start justify-between gap-4">
+                  {faq.q}
+                  <span
+                    className="mt-0.5 shrink-0 text-content-muted transition-transform duration-base group-open:rotate-45"
+                    aria-hidden="true"
+                  >
+                    +
+                  </span>
+                </span>
+              </summary>
+              <p className="mt-3 text-sm text-content-muted">{faq.a}</p>
+            </details>
+          ))}
+        </div>
+      </Section>
     </>
   );
 }

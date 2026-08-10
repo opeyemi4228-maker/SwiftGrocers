@@ -1,402 +1,261 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Package, Truck, CheckCircle, XCircle, Clock, Search, Filter,
-  ChevronDown, ChevronRight, Eye, Download, RotateCcw, MessageCircle,
-  Calendar, MapPin, CreditCard, Star, AlertCircle, RefreshCw,
-  ShoppingBag, PhoneCall, Mail, X
-} from 'lucide-react';
-import Footer from '@/components/Footer';
-import Navbar from '@/components/Navbar';
+import React, { useMemo, useState } from "react";
+import Link from "next/link";
+import toast from "react-hot-toast";
+import { CreditCard, MapPin, Package, RotateCcw, Search, Truck } from "lucide-react";
+import { ORDERS, ORDER_STATUS } from "@/lib/orders";
+import { useCartStore } from "@/lib/states/cartStore";
+import { formatDate, formatPrice, cn } from "@/lib/utils";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import Chip from "@/components/ui/Chip";
+import EmptyState from "@/components/ui/EmptyState";
+import Input from "@/components/ui/Input";
+import SmartImage from "@/components/ui/SmartImage";
 
-// Order Manager
-class OrderManager {
-  static ORDERS_KEY = 'swift_grocers_orders';
+const FILTERS = [
+  { key: "all", label: "All orders" },
+  { key: "out-for-delivery", label: "In progress" },
+  { key: "delivered", label: "Delivered" },
+  { key: "cancelled", label: "Cancelled" },
+];
 
-  static getOrders() {
-    if (typeof window === 'undefined') return [];
-    const orders = localStorage.getItem(this.ORDERS_KEY);
-    return orders ? JSON.parse(orders) : this.getSampleOrders();
-  }
+function OrderCard({ order, onReorder }) {
+  const status = ORDER_STATUS[order.status];
+  const inProgress = order.status === "out-for-delivery" || order.status === "packing";
 
-  static saveOrders(orders) {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(this.ORDERS_KEY, JSON.stringify(orders));
-  }
+  return (
+    <article className="overflow-hidden rounded-2xl border border-line bg-surface">
+      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-line px-5 py-4 sm:px-6">
+        <div>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-base font-semibold text-content-strong">{order.id}</h2>
+            <Badge tone={status.tone}>{status.label}</Badge>
+          </div>
+          <p className="mt-1.5 text-xs text-content-muted">
+            Placed {formatDate(order.placedAt)} · {order.itemCount}{" "}
+            {order.itemCount === 1 ? "item" : "items"}
+          </p>
+        </div>
 
-  static getSampleOrders() {
-    return [
-      {
-        id: 'ORD-2024-001234',
-        date: '2024-11-10T14:30:00',
-        status: 'delivered',
-        total: 15750,
-        items: [
-          { name: 'Fresh Organic Tomatoes', quantity: 3, price: 850, image: 'https://images.unsplash.com/photo-1546094096-0df4bcaaa337?w=300' },
-          { name: 'Premium Rice (5kg)', quantity: 2, price: 3500, image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=300' }
-        ],
-        deliveryAddress: '123 Main Street, Victoria Island, Lagos',
-        paymentMethod: 'Card ending in 4242',
-        deliveryDate: '2024-11-12',
-        canReturn: true,
-        tracking: 'TRK-891234567'
-      },
-      {
-        id: 'ORD-2024-001235',
-        date: '2024-11-12T09:15:00',
-        status: 'in_transit',
-        total: 8900,
-        items: [
-          { name: 'Fresh Milk (1L)', quantity: 4, price: 1200, image: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=300' },
-          { name: 'Whole Wheat Bread', quantity: 2, price: 650, image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300' }
-        ],
-        deliveryAddress: '456 Park Avenue, Lekki Phase 1, Lagos',
-        paymentMethod: 'Card ending in 8888',
-        estimatedDelivery: '2024-11-14',
-        canReturn: false,
-        tracking: 'TRK-891234568'
-      },
-      {
-        id: 'ORD-2024-001236',
-        date: '2024-11-13T16:45:00',
-        status: 'processing',
-        total: 12300,
-        items: [
-          { name: 'Organic Chicken (1kg)', quantity: 2, price: 4500, image: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=300' },
-          { name: 'Fresh Vegetables Bundle', quantity: 1, price: 3300, image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=300' }
-        ],
-        deliveryAddress: '789 Queens Drive, Ikeja GRA, Lagos',
-        paymentMethod: 'Cash on Delivery',
-        estimatedDelivery: '2024-11-15',
-        canReturn: false,
-        tracking: 'TRK-891234569'
-      },
-      {
-        id: 'ORD-2024-001237',
-        date: '2024-10-28T11:20:00',
-        status: 'returned',
-        total: 6800,
-        items: [
-          { name: 'Breakfast Cereal Box', quantity: 2, price: 2400, image: 'https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=300' }
-        ],
-        deliveryAddress: '321 Riverside, Ikoyi, Lagos',
-        paymentMethod: 'Card ending in 5555',
-        returnDate: '2024-11-01',
-        returnReason: 'Product damaged',
-        refundAmount: 6800,
-        refundStatus: 'processed',
-        tracking: 'TRK-891234570'
-      }
-    ];
-  }
+        <div className="text-right">
+          <p className="tabular text-lg font-semibold text-content-strong">
+            {formatPrice(order.total)}
+          </p>
+          <p className="text-xs text-content-muted">{order.payment}</p>
+        </div>
+      </header>
 
-  static initiateReturn(orderId, reason, items) {
-    const orders = this.getOrders();
-    const order = orders.find(o => o.id === orderId);
-    if (order) {
-      order.returnRequested = true;
-      order.returnReason = reason;
-      order.returnDate = new Date().toISOString();
-      order.returnItems = items;
-      order.refundAmount = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-      order.refundStatus = 'pending';
-      this.saveOrders(orders);
-    }
-    return orders;
-  }
+      {inProgress ? (
+        <div className="flex items-center gap-2.5 border-b border-line bg-info-soft px-5 py-3 text-sm sm:px-6">
+          <Truck className="h-4 w-4 shrink-0 text-info" aria-hidden="true" />
+          <span className="font-medium text-content-strong">{order.eta}</span>
+        </div>
+      ) : null}
+
+      <ul className="divide-y divide-line px-5 sm:px-6">
+        {order.lines.map((line) => (
+          <li key={line.product.id} className="flex items-center gap-4 py-4">
+            <Link
+              href={`/product/${line.product.slug}`}
+              className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-surface-sunken"
+            >
+              <SmartImage
+                src={line.product.image}
+                alt={line.product.name}
+                sizes="64px"
+                className="object-cover"
+              />
+            </Link>
+
+            <div className="min-w-0 flex-1">
+              <Link
+                href={`/product/${line.product.slug}`}
+                className="block truncate text-sm font-medium text-content-strong hover:text-brand-700 dark:hover:text-brand-300"
+              >
+                {line.product.name}
+              </Link>
+              <p className="tabular mt-0.5 text-xs text-content-muted">
+                Qty {line.quantity} · {formatPrice(line.product.price)} each
+              </p>
+            </div>
+
+            <span className="tabular shrink-0 text-sm font-semibold text-content-strong">
+              {formatPrice(line.product.price * line.quantity)}
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-4 sm:px-6">
+        <p className="inline-flex items-center gap-2 text-xs text-content-muted">
+          <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          {order.address}
+        </p>
+
+        <div className="flex flex-wrap gap-2">
+          {order.status !== "cancelled" ? (
+            <Button size="sm" variant="outline" onClick={() => onReorder(order)} leadingIcon={RotateCcw}>
+              Buy again
+            </Button>
+          ) : null}
+          <Button size="sm" variant="ghost" href="/contact">
+            Get help
+          </Button>
+        </div>
+      </footer>
+    </article>
+  );
 }
 
-const statusConfig = {
-  processing: { label: 'Processing', color: 'bg-blue-100 text-blue-700', icon: Clock },
-  in_transit: { label: 'In Transit', color: 'bg-purple-100 text-purple-700', icon: Truck },
-  delivered: { label: 'Delivered', color: 'bg-green-100 text-green-700', icon: CheckCircle },
-  cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-700', icon: XCircle },
-  returned: { label: 'Returned', color: 'bg-orange-100 text-orange-700', icon: RotateCcw }
-};
+export default function OrdersPage() {
+  const [filter, setFilter] = useState("all");
+  const [query, setQuery] = useState("");
+  const addItem = useCartStore((state) => state.addItem);
+  const openCart = useCartStore((state) => state.openCart);
 
-// Mapping refundStatus to timeline index
-const refundStatusIndex = {
-  pending: 0,
-  processed: 1,
-  refunded: 2
-};
+  const visible = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    return ORDERS.filter((order) => {
+      if (filter !== "all" && order.status !== filter) return false;
+      if (!term) return true;
+      return (
+        order.id.toLowerCase().includes(term) ||
+        order.lines.some((line) => line.product.name.toLowerCase().includes(term))
+      );
+    });
+  }, [filter, query]);
 
-export default function ReturnsOrdersPage() {
-  const [orders, setOrders] = useState([]);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [showReturnModal, setShowReturnModal] = useState(false);
-  const [returnReason, setReturnReason] = useState('');
-  const [returnItems, setReturnItems] = useState([]);
-  const [notification, setNotification] = useState(null);
-  const [activeTab, setActiveTab] = useState('orders');
-
-  useEffect(() => {
-    setOrders(OrderManager.getOrders());
-  }, []);
-
-  const showNotification = (type, message) => {
-    setNotification({ type, message });
-    setTimeout(() => setNotification(null), 4000);
+  const reorder = (order) => {
+    order.lines.forEach((line) => addItem(line.product, line.quantity));
+    toast.success(`${order.itemCount} items added from ${order.id}`);
+    openCart();
   };
 
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch = order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          order.items.some(item => item.name.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
-    const matchesTab = activeTab === 'orders' ? true : (order.status === 'returned' || order.returnRequested);
-    return matchesSearch && matchesStatus && matchesTab;
-  });
-
-  const handleReturnRequest = () => {
-    if (!returnReason || returnItems.length === 0) {
-      showNotification('error', 'Please select items and a reason for return');
-      return;
-    }
-
-    OrderManager.initiateReturn(selectedOrder.id, returnReason, returnItems);
-    setOrders(OrderManager.getOrders());
-    setShowReturnModal(false);
-    setSelectedOrder(null);
-    setReturnReason('');
-    setReturnItems([]);
-    showNotification('success', 'Return request submitted successfully!');
-  };
+  const counts = useMemo(
+    () =>
+      Object.fromEntries(
+        FILTERS.map((entry) => [
+          entry.key,
+          entry.key === "all"
+            ? ORDERS.length
+            : ORDERS.filter((order) => order.status === entry.key).length,
+        ])
+      ),
+    []
+  );
 
   return (
     <>
-    <Navbar />
-    <div className="min-h-screen bg-gradient-to-b from-green-50 via-white to-gray-50 font-[Montserrat]">
-      {/* Notification */}
-      <AnimatePresence>
-        {notification && (
-          <motion.div
-            initial={{ opacity: 0, y: -50, x: '-50%' }}
-            animate={{ opacity: 1, y: 0, x: '-50%' }}
-            exit={{ opacity: 0, y: -50, x: '-50%' }}
-            className="fixed top-6 left-1/2 z-[9999] max-w-md"
-          >
-            <div className={`rounded-xl shadow-2xl p-4 flex items-center gap-3 ${notification.type === 'success' ? 'bg-green-600' : 'bg-red-600'} text-white`}>
-              {notification.type === 'success' ? <CheckCircle className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
-              <span className="font-semibold">{notification.message}</span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <header className="border-b border-line bg-surface">
+        <div className="container-page py-10 sm:py-12">
+          <nav aria-label="Breadcrumb" className="mb-3 text-xs text-content-muted">
+            <Link href="/" className="transition-colors hover:text-content-strong">
+              Home
+            </Link>
+            <span className="mx-1.5" aria-hidden="true">/</span>
+            <span className="text-content-strong">Orders</span>
+          </nav>
 
-      {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white py-16">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="flex items-center gap-3 mb-4">
-              <Package className="w-10 h-10" />
-              <h1 className="text-4xl md:text-5xl font-bold">Orders & Returns</h1>
+          <h1 className="text-3xl font-bold sm:text-4xl">Orders &amp; returns</h1>
+          <p className="mt-2 text-base text-content-muted">
+            Track a delivery, buy a past basket again, or start a refund.
+          </p>
+
+          <dl className="mt-8 grid max-w-lg grid-cols-3 gap-6 border-t border-line pt-6">
+            <div>
+              <dt className="text-xs text-content-muted">Total orders</dt>
+              <dd className="tabular mt-1 text-xl font-semibold text-content-strong">
+                {ORDERS.length}
+              </dd>
             </div>
-            <p className="text-green-100 text-lg">
-              Track your orders, view order history, and manage returns
-            </p>
-          </motion.div>
+            <div>
+              <dt className="text-xs text-content-muted">In progress</dt>
+              <dd className="tabular mt-1 text-xl font-semibold text-content-strong">
+                {counts["out-for-delivery"]}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-content-muted">Lifetime spend</dt>
+              <dd className="tabular mt-1 text-xl font-semibold text-content-strong">
+                {formatPrice(
+                  ORDERS.filter((order) => order.status !== "cancelled").reduce(
+                    (total, order) => total + order.total,
+                    0
+                  )
+                )}
+              </dd>
+            </div>
+          </dl>
         </div>
-      </div>
+      </header>
 
-      {/* Tabs */}
-      <div className="bg-white border-b sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex gap-8">
-            <button
-              onClick={() => setActiveTab('orders')}
-              className={`py-4 border-b-2 font-semibold transition-all ${activeTab === 'orders' ? 'border-green-600 text-green-600' : 'border-transparent text-gray-600 hover:text-gray-900'}`}
-            >
-              <div className="flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5" />
-                My Orders
-              </div>
-            </button>
-            <button
-              onClick={() => setActiveTab('returns')}
-              className={`py-4 border-b-2 font-semibold transition-all ${activeTab === 'returns' ? 'border-green-600 text-green-600' : 'border-transparent text-gray-600 hover:text-gray-900'}`}
-            >
-              <div className="flex items-center gap-2">
-                <RefreshCw className="w-5 h-5" />
-                Returns & Refunds
-              </div>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Search & Filter */}
-        <div className="mb-8 bg-white rounded-2xl shadow-sm p-6">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by order ID or product name..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
-            <div className="relative">
-              <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 appearance-none bg-white cursor-pointer"
+      <div className="container-page py-10">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="rail pb-0">
+            {FILTERS.map((entry) => (
+              <Chip
+                key={entry.key}
+                active={filter === entry.key}
+                count={counts[entry.key]}
+                onClick={() => setFilter(entry.key)}
               >
-                <option value="all">All Statuses</option>
-                <option value="processing">Processing</option>
-                <option value="in_transit">In Transit</option>
-                <option value="delivered">Delivered</option>
-                <option value="returned">Returned</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
+                {entry.label}
+              </Chip>
+            ))}
+          </div>
+
+          <div className="sm:w-72">
+            <label htmlFor="order-search" className="sr-only">
+              Search orders
+            </label>
+            <Input
+              id="order-search"
+              type="search"
+              size="sm"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search by order ID or product"
+              leadingIcon={Search}
+            />
           </div>
         </div>
 
-        {/* Orders List */}
-        <div className="space-y-6">
-          {filteredOrders.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl shadow-sm p-12 text-center"
-            >
-              <Package className="w-20 h-20 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">No orders found</h3>
-              <p className="text-gray-600">
-                {activeTab === 'returns' ? "You haven't made any returns yet" : "Start shopping to see your orders here"}
-              </p>
-            </motion.div>
-          ) : (
-            <AnimatePresence>
-              {filteredOrders.map((order, index) => {
-                const config = statusConfig[order.status];
-                const Icon = config.icon;
+        {visible.length === 0 ? (
+          <EmptyState
+            icon={Package}
+            title="No orders match"
+            description="Try a different filter, or clear the search to see everything."
+            action={
+              <Button
+                onClick={() => {
+                  setFilter("all");
+                  setQuery("");
+                }}
+              >
+                Clear filters
+              </Button>
+            }
+          />
+        ) : (
+          <div className={cn("space-y-5")}>
+            {visible.map((order) => (
+              <OrderCard key={order.id} order={order} onReorder={reorder} />
+            ))}
+          </div>
+        )}
 
-                return (
-                  <motion.div
-                    key={order.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all overflow-hidden"
-                  >
-                    {/* Order Header */}
-                    <div className="p-6 border-b border-gray-100">
-                      <div className="flex flex-wrap items-start justify-between gap-4">
-                        <div>
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-xl font-bold text-gray-900">{order.id}</h3>
-                            <span className={`px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1 ${config.color}`}>
-                              <Icon className="w-4 h-4" />
-                              {config.label}
-                            </span>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-4 h-4" />
-                              {new Date(order.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <CreditCard className="w-4 h-4" />
-                              {order.paymentMethod}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-green-600 mb-1">
-                            ₦{order.total.toLocaleString()}
-                          </div>
-                          {order.estimatedDelivery && (
-                            <p className="text-sm text-gray-600">
-                              Est. delivery: {new Date(order.estimatedDelivery).toLocaleDateString()}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Order Items */}
-                    <div className="p-6 space-y-4">
-                      {order.items.map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-4">
-                          <img src={item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover" />
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-gray-900">{item.name}</h4>
-                            <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
-                          </div>
-                          <div className="text-right font-bold text-gray-900">₦{(item.price * item.quantity).toLocaleString()}</div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Delivery Address */}
-                    <div className="mt-4 p-4 bg-gray-50 rounded-xl flex items-start gap-3">
-                      <MapPin className="w-5 h-5 text-gray-600 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-semibold text-gray-900 mb-1">Delivery Address</p>
-                        <p className="text-sm text-gray-600">{order.deliveryAddress}</p>
-                      </div>
-                    </div>
-
-                    {/* Return Info */}
-                    {order.returnRequested && (
-                      <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-xl flex flex-col gap-3">
-                        <div className="flex items-center gap-3">
-                          <RefreshCw className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                          <p className="font-semibold text-orange-900">Return Requested</p>
-                        </div>
-
-                        {/* Timeline Tracker */}
-                        <div className="mt-2 flex items-center justify-between">
-                          {['Pending', 'Processed', 'Refunded'].map((stage, idx) => {
-                            const currentIdx = refundStatusIndex[order.refundStatus] ?? 0;
-                            const isCompleted = idx < currentIdx;
-                            const isActive = idx === currentIdx;
-
-                            return (
-                              <div key={stage} className="flex-1 flex flex-col items-center relative">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
-                                  isCompleted ? 'bg-green-600' : isActive ? 'bg-orange-600' : 'bg-gray-300'
-                                }`}>
-                                  {idx + 1}
-                                </div>
-                                <p className={`mt-2 text-sm ${isCompleted ? 'text-green-600' : isActive ? 'text-orange-600' : 'text-gray-400'}`}>
-                                  {stage}
-                                </p>
-                                {idx < 2 && (
-                                  <div className={`absolute top-3 left-1/2 w-full h-1 ${isCompleted ? 'bg-green-600' : 'bg-gray-300'}`} style={{ zIndex: -1 }}></div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                        <p className="text-sm text-gray-700 mt-2">Reason: {order.returnReason}</p>
-                        <p className="text-sm text-gray-700">Refund Amount: ₦{order.refundAmount.toLocaleString()}</p>
-                      </div>
-                    )}
-
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          )}
+        <div className="mt-10 flex flex-wrap items-center gap-3 rounded-2xl bg-surface-sunken p-6">
+          <CreditCard className="h-5 w-5 shrink-0 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+          <p className="flex-1 text-sm text-content">
+            Refunds land back on the original payment method within three working days.
+          </p>
+          <Button href="/contact" size="sm" variant="outline">
+            Start a return
+          </Button>
         </div>
       </div>
-    </div>
-    <Footer />
     </>
   );
 }
