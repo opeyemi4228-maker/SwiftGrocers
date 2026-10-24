@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import PriceRange from "./PriceRange";
 
-const DIETARY = ["organic", "vegan", "gluten-free", "wholegrain", "high-protein", "sugar-free"];
+const DIETARY = ["soup", "swallow", "organic", "vegan", "high-protein", "diabetic-friendly"];
 const BRANDS_SHOWN = 6;
 
 const countBy = (predicate) => products.filter(predicate).length;
@@ -49,7 +49,7 @@ function Check({ checked, onChange, label, count, media }) {
 }
 
 /**
- * Filter controls. Stateless — it renders the filter object it is given and
+ * Filter controls. Stateless, it renders the filter object it is given and
  * reports changes upward, so the URL stays the single source of truth.
  */
 export default function FilterPanel({ filters, onChange, onReset, activeCount }) {
@@ -252,7 +252,7 @@ export default function FilterPanel({ filters, onChange, onReset, activeCount })
 
         <p className="mt-3 flex items-start gap-2 text-xs text-content-muted">
           <Zap className="mt-0.5 h-3 w-3 shrink-0 text-accent-500" aria-hidden="true" />
-          Same-day covers anything picked this morning. Order before 6 PM.
+          Same day covers anything picked this morning. Order before 6 PM.
         </p>
       </Group>
 

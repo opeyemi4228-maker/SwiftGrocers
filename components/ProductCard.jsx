@@ -1,29 +1,43 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { Heart, Leaf, ShoppingBasket, Timer } from "lucide-react";
+import { Flame, Heart, Leaf, Plus } from "lucide-react";
 import { useCartStore } from "@/lib/states/cartStore";
-import { cn, formatPrice } from "@/lib/utils";
+import { useIsSaved, useWishlistStore } from "@/lib/states/wishlistStore";
+import { cn, formatCompact, formatPrice } from "@/lib/utils";
 import Badge from "@/components/ui/Badge";
 import Rating from "@/components/ui/Rating";
 import SmartImage from "@/components/ui/SmartImage";
 import QuantityStepper from "@/components/ui/QuantityStepper";
 import Skeleton from "@/components/ui/Skeleton";
 
+const LOW_STOCK = 25;
+
 function StockNote({ stock }) {
   if (stock <= 0) {
     return <span className="text-xs font-medium text-content-muted">Out of stock</span>;
   }
-  if (stock <= 10) {
+  if (stock <= LOW_STOCK) {
     return (
-      <span className="text-xs font-medium text-accent-700 dark:text-accent-300">
+      <span className="text-xs font-semibold text-accent-700 dark:text-accent-300">
         Only {stock} left
       </span>
     );
   }
   return null;
+}
+
+/** "1.8k bought last week", a real count from the catalogue, shown only when it is meaningful. */
+function Popularity({ count }) {
+  if (!count || count < 300) return null;
+  return (
+    <p className="inline-flex items-center gap-1 text-2xs font-medium text-content-muted">
+      <Flame className="h-3 w-3 shrink-0 text-accent-500" aria-hidden="true" />
+      <span className="tabular">{formatCompact(count)}</span> bought last week
+    </p>
+  );
 }
 
 /**
@@ -32,7 +46,11 @@ function StockNote({ stock }) {
  * The whole card is a link (via a stretched overlay anchor) while the cart
  * controls sit above it, so a tap anywhere opens the product but the add
  * button still works. Once an item is in the cart the button becomes a
- * stepper in place — no dialog, no page change.
+ * stepper in place, no dialog, no page change.
+ *
+ * Price sits on its own line with the saving in naira beneath it: on a phone,
+ * the add control then gets the card's full width, which is the largest
+ * target a two-column grid can offer the thumb.
  */
 export default function ProductCard({
   product,
@@ -41,13 +59,14 @@ export default function ProductCard({
   className,
   style,
 }) {
-  const [wishlisted, setWishlisted] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
   const setQuantity = useCartStore((state) => state.setQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
   const quantity = useCartStore(
     (state) => state.items.find((item) => item.id === product?.id)?.quantity ?? 0
   );
+  const toggleSaved = useWishlistStore((state) => state.toggle);
+  const wishlisted = useIsSaved(product?.id);
 
   if (!product) return null;
 
@@ -62,28 +81,35 @@ export default function ProductCard({
     rating,
     reviewCount,
     unit,
+    unitPrice,
     stock = 0,
     isOrganic,
     bestseller,
     isNew,
     categoryLabel,
-    deliveryTime,
     description,
+    soldLastWeek,
   } = product;
 
-  const href = `/product/${slug ?? id}`;
+  const href = product.href ?? `/product/${slug ?? id}`;
   const soldOut = stock <= 0;
+  const saving = originalPrice > price ? originalPrice - price : 0;
 
   const add = () => {
     addItem(product, 1);
-    toast.success(`${name} added to cart`);
+    toast.success(`${name} added to your cart`);
+  };
+
+  const save = () => {
+    toggleSaved(id);
+    toast(wishlisted ? "Removed from saved items" : "Saved for later", { icon: wishlisted ? "🤍" : "❤️" });
   };
 
   const media = (
     <div
       className={cn(
         "relative shrink-0 overflow-hidden bg-surface-sunken",
-        variant === "grid" ? "aspect-product w-full" : "aspect-square w-28 rounded-xl sm:w-36"
+        variant === "grid" ? "aspect-square w-full" : "aspect-square w-28 rounded-xl sm:w-36"
       )}
     >
       <SmartImage
@@ -92,12 +118,12 @@ export default function ProductCard({
         priority={priority}
         sizes={
           variant === "grid"
-            ? "(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 18vw"
+            ? "(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 18vw"
             : "144px"
         }
         className={cn(
           "object-cover transition-transform duration-slow ease-out-quart",
-          !soldOut && "group-hover:scale-[1.04]"
+          !soldOut && "group-hover:scale-[1.05]"
         )}
       />
 
@@ -137,12 +163,12 @@ export default function ProductCard({
 
       <button
         type="button"
-        onClick={() => setWishlisted((value) => !value)}
+        onClick={save}
         aria-label={wishlisted ? `Remove ${name} from saved items` : `Save ${name} for later`}
         aria-pressed={wishlisted}
         className={cn(
-          "absolute right-2.5 top-2.5 z-20 grid h-8 w-8 place-items-center rounded-full",
-          "bg-surface/90 shadow-sm backdrop-blur transition-colors duration-fast",
+          "absolute right-2.5 top-2.5 z-20 grid h-9 w-9 place-items-center rounded-full",
+          "bg-surface/90 shadow-sm backdrop-blur transition-[color,transform] duration-fast active:scale-90",
           "hover:bg-surface",
           wishlisted ? "text-danger" : "text-content-muted hover:text-content-strong"
         )}
@@ -156,7 +182,7 @@ export default function ProductCard({
     <button
       type="button"
       disabled
-      className="h-10 shrink-0 cursor-not-allowed rounded-xl bg-surface-sunken px-4 text-xs font-semibold text-content-muted"
+      className="relative z-20 h-10 w-full cursor-not-allowed rounded-xl bg-surface-sunken px-4 text-xs font-semibold text-content-muted"
     >
       Sold out
     </button>
@@ -167,7 +193,8 @@ export default function ProductCard({
       max={stock}
       onChange={(next) => setQuantity(id, next)}
       onRemove={() => removeItem(id)}
-      className="relative z-20 shrink-0"
+      label={`${name} quantity`}
+      className="relative z-20 h-10 w-full justify-between border-brand-600 bg-brand-50 dark:bg-brand-950"
     />
   ) : (
     <button
@@ -175,16 +202,35 @@ export default function ProductCard({
       onClick={add}
       aria-label={`Add ${name} to cart, ${formatPrice(price)}`}
       className={cn(
-        "relative z-20 inline-flex h-10 shrink-0 items-center gap-2 rounded-full border-2 px-4",
-        "border-brand-600 bg-surface text-sm font-bold text-brand-700",
-        "transition-[background-color,color,box-shadow,transform] duration-fast",
-        "hover:bg-brand-600 hover:text-primary-content hover:shadow-brand-glow active:scale-95",
-        "dark:text-brand-300 dark:hover:text-primary-content"
+        "relative z-20 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl px-3",
+        "bg-brand-600 text-sm font-bold text-primary-content",
+        "transition-[background-color,box-shadow,transform] duration-fast",
+        "hover:bg-brand-700 hover:shadow-brand-glow active:scale-[0.97]"
       )}
     >
-      <ShoppingBasket className="h-4 w-4 shrink-0" aria-hidden="true" />
-      <span className="tabular">{formatPrice(price)}</span>
+      <Plus className="h-4 w-4 shrink-0" strokeWidth={2.5} aria-hidden="true" />
+      Add
     </button>
+  );
+
+  const priceBlock = (
+    <div className="min-w-0">
+      <div className="flex flex-wrap items-baseline gap-x-2">
+        <span className="tabular text-base font-bold text-content-strong sm:text-lg">
+          {formatPrice(price)}
+        </span>
+        {saving > 0 ? (
+          <span className="tabular text-xs text-content-muted line-through">
+            {formatPrice(originalPrice)}
+          </span>
+        ) : null}
+      </div>
+      {saving > 0 ? (
+        <p className="tabular text-2xs font-semibold text-danger">You save {formatPrice(saving)}</p>
+      ) : unitPrice ? (
+        <p className="tabular text-2xs text-content-muted">{unitPrice}</p>
+      ) : null}
+    </div>
   );
 
   if (variant === "list") {
@@ -220,17 +266,8 @@ export default function ProductCard({
           </div>
 
           <div className="mt-auto flex items-end justify-between gap-3 pt-3">
-            <div>
-              <span className="tabular text-lg font-semibold text-content-strong">
-                {formatPrice(price)}
-              </span>
-              {originalPrice > price ? (
-                <span className="tabular ml-2 text-xs text-content-muted line-through">
-                  {formatPrice(originalPrice)}
-                </span>
-              ) : null}
-            </div>
-            {cartControl}
+            {priceBlock}
+            <div className="w-32 shrink-0">{cartControl}</div>
           </div>
         </div>
       </article>
@@ -249,44 +286,25 @@ export default function ProductCard({
     >
       {media}
 
-      <div className="flex flex-1 flex-col p-3.5">
-        <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-content-strong">
+      <div className="flex flex-1 flex-col p-3 sm:p-3.5">
+        <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-content-strong">
           <Link href={href} className="after:absolute after:inset-0 after:content-['']">
             {name}
           </Link>
         </h3>
 
-        <p className="mt-1 text-xs text-content-muted">{unit}</p>
+        <p className="mt-0.5 truncate text-xs text-content-muted">{unit}</p>
 
-        <div className="mt-2 flex items-center gap-2">
+        <div className="mt-1.5 flex items-center gap-2">
           <Rating value={rating} count={reviewCount} size="sm" />
         </div>
 
-        {deliveryTime ? (
-          <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-content-muted">
-            <Timer className="h-3 w-3 shrink-0" aria-hidden="true" />
-            {deliveryTime}
-          </p>
-        ) : null}
-
-        {/*
-          The price is the button. The number a shopper is already evaluating
-          becomes the tap target, which removes a separate control from the
-          card, enlarges the hit area, and turns "decide" and "act" into one
-          motion instead of two.
-        */}
-        <div className="mt-auto flex items-center justify-between gap-2 pt-4">
-          <div className="min-w-0">
-            {originalPrice > price ? (
-              <div className="tabular text-xs text-content-muted line-through">
-                {formatPrice(originalPrice)}
-              </div>
-            ) : (
-              <StockNote stock={stock} />
-            )}
-          </div>
-          {cartControl}
+        <div className="mt-1.5 min-h-4">
+          {stock > 0 && stock <= LOW_STOCK ? <StockNote stock={stock} /> : <Popularity count={soldLastWeek} />}
         </div>
+
+        <div className="mt-auto pt-3">{priceBlock}</div>
+        <div className="mt-2.5">{cartControl}</div>
       </div>
     </article>
   );
@@ -310,15 +328,13 @@ export function ProductCardSkeleton({ variant = "grid" }) {
 
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-surface">
-      <Skeleton className="aspect-product w-full rounded-none" />
+      <Skeleton className="aspect-square w-full rounded-none" />
       <div className="space-y-2.5 p-3.5">
         <Skeleton className="h-4 w-4/5" />
         <Skeleton className="h-3 w-16" />
         <Skeleton className="h-3 w-24" />
-        <div className="flex items-center justify-between pt-2">
-          <Skeleton className="h-5 w-20" />
-          <Skeleton className="h-9 w-16 rounded-xl" />
-        </div>
+        <Skeleton className="h-5 w-20" />
+        <Skeleton className="h-10 w-full rounded-xl" />
       </div>
     </div>
   );

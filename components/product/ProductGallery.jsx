@@ -22,7 +22,7 @@ export default function ProductGallery({ images = [], alt, discountPercent = 0 }
         onKeyDown={onKeyDown}
         tabIndex={0}
         role="group"
-        aria-label={`${alt} — image ${active + 1} of ${shots.length}`}
+        aria-label={`${alt}, image ${active + 1} of ${shots.length}`}
       >
         <SmartImage
           src={shots[active]}

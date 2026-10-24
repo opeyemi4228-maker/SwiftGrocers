@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* ==========================================================================
-   SwiftGrocers Design System — Tokens
+   SwiftGrocers Design System, Tokens
    Values are raw HSL channels so Tailwind can apply opacity:
    `hsl(var(--token) / <alpha-value>)`
    ========================================================================== */
@@ -65,9 +65,9 @@
     --surface-inverse: var(--neutral-900);
     --overlay: 24 16% 12%;
 
-    --content-strong: var(--neutral-900);
-    --content: var(--neutral-700);
-    --content-muted: var(--neutral-500);
+    --content-strong: var(--neutral-950);
+    --content: var(--neutral-800);
+    --content-muted: var(--neutral-600);
     --content-inverse: var(--neutral-50);
 
     --line: var(--neutral-200);
@@ -101,14 +101,14 @@
 
     /* --- Layout ---------------------------------------------------------
        Header is sticky, so these values only drive scroll-padding and the
-       space reserved for the mobile tab bar — nothing is positioned by them. */
-    --header-height: 7rem;
+       space reserved for the mobile tab bar, nothing is positioned by them. */
+    --header-height: 7.5rem;
     --tabbar-height: 4rem;
   }
 
   @media (min-width: 1024px) {
     :root {
-      --header-height: 8rem;
+      --header-height: 8.25rem;
       --tabbar-height: 0rem;
     }
   }
@@ -122,8 +122,8 @@
     --overlay: 22 24% 4%;
 
     --content-strong: var(--neutral-50);
-    --content: 36 10% 78%;
-    --content-muted: 34 8% 58%;
+    --content: 36 12% 86%;
+    --content-muted: 34 9% 68%;
     --content-inverse: var(--neutral-900);
 
     --line: 26 10% 21%;
@@ -165,7 +165,6 @@
 
   body {
     @apply bg-canvas text-content antialiased;
-    font-feature-settings: "cv11", "ss01";
     font-variant-ligatures: contextual;
     text-rendering: optimizeLegibility;
   }
@@ -177,7 +176,7 @@
   h5 {
     @apply font-display text-content-strong;
     text-wrap: balance;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.015em;
   }
 
   p {
@@ -204,7 +203,7 @@
     @apply bg-brand-200/70 text-brand-900;
   }
 
-  /* Scrollbars are styled rather than hidden — hiding them removes the only
+  /* Scrollbars are styled rather than hidden, hiding them removes the only
      affordance telling users a region scrolls. */
   * {
     scrollbar-width: thin;

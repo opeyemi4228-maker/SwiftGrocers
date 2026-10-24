@@ -7,19 +7,19 @@ const PROMOS = [
   {
     href: "/organic-healthy",
     eyebrow: "Certified organic",
-    title: "The organic aisle, without the organic price",
+    title: "Organic food at fair prices",
     body: "Vegetables, grains and pantry staples from farms we audit ourselves.",
     image:
-      "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&q=70&w=1200",
+      "https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&q=70&w=1200",
     span: "lg:col-span-7",
   },
   {
     href: "/seasonal-specials",
     eyebrow: "In season now",
     title: "What's good this month",
-    body: "Peak-season produce at its cheapest and best.",
+    body: "Peak season produce at its cheapest and best.",
     image:
-      "https://images.unsplash.com/photo-1476124369491-f7addf5dd2f8?auto=format&fit=crop&q=70&w=1000",
+      "https://images.unsplash.com/photo-1585540083814-ea6ee8af9e4f?auto=format&fit=crop&q=70&w=1000",
     span: "lg:col-span-5",
   },
 ];

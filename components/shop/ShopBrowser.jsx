@@ -16,7 +16,7 @@ import FilterPanel from "./FilterPanel";
 
 const SORTS = {
   relevance: { label: "Most relevant", compare: null },
-  popular: { label: "Most popular", compare: (a, b) => b.reviewCount - a.reviewCount },
+  popular: { label: "Most popular", compare: (a, b) => b.soldLastWeek - a.soldLastWeek },
   "price-asc": { label: "Price: low to high", compare: (a, b) => a.price - b.price },
   "price-desc": { label: "Price: high to low", compare: (a, b) => b.price - a.price },
   rating: { label: "Highest rated", compare: (a, b) => b.rating - a.rating },
@@ -28,6 +28,7 @@ const QUICK_FILTERS = [
   { key: "organic", label: "Organic" },
   { key: "fresh", label: "Fresh today" },
   { key: "inStock", label: "In stock" },
+  { key: "subscribe", label: "Subscribe & save" },
 ];
 
 const list = (value) => (value ? value.split(",").filter(Boolean) : []);
@@ -59,6 +60,7 @@ export default function ShopBrowser() {
       onSale: searchParams.get("sale") === "1",
       organic: searchParams.get("organic") === "1",
       fresh: searchParams.get("fresh") === "1",
+      subscribe: searchParams.get("subscribe") === "1",
       sort: searchParams.get("sort") ?? "relevance",
       view: searchParams.get("view") === "list" ? "list" : "grid",
     }),
@@ -111,7 +113,7 @@ export default function ShopBrowser() {
 
     const filtered = CATALOG.filter((product) => {
       if (term) {
-        const haystack = `${product.name} ${product.brand} ${product.categoryLabel} ${product.tags?.join(" ")}`;
+        const haystack = `${product.name} ${product.brand} ${product.categoryLabel} ${product.tags?.join(" ")} ${product.aliases?.join(" ")}`;
         if (!haystack.toLowerCase().includes(term)) return false;
       }
       if (filters.categories.length && !filters.categories.includes(product.category)) return false;
@@ -127,6 +129,7 @@ export default function ShopBrowser() {
       if (filters.onSale && product.discountPercent <= 0) return false;
       if (filters.organic && !product.isOrganic) return false;
       if (filters.fresh && !product.isFresh) return false;
+      if (filters.subscribe && !product.subscribable) return false;
       return true;
     });
 
@@ -167,6 +170,7 @@ export default function ShopBrowser() {
     if (filters.onSale) pills.push({ label: "On sale", clear: () => update({ onSale: false }) });
     if (filters.organic) pills.push({ label: "Organic", clear: () => update({ organic: null }) });
     if (filters.fresh) pills.push({ label: "Fresh", clear: () => update({ fresh: null }) });
+    if (filters.subscribe) pills.push({ label: "Subscribe & save", clear: () => update({ subscribe: null }) });
     return pills;
   }, [filters, update]);
 

@@ -53,22 +53,22 @@ export default {
 
       fontFamily: {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
-        display: ["var(--font-display)", "var(--font-sans)", "ui-sans-serif", "sans-serif"],
+        display: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
       },
 
       fontSize: {
-        "2xs": ["0.6875rem", { lineHeight: "1rem", letterSpacing: "0.01em" }],
-        xs: ["0.75rem", { lineHeight: "1.125rem" }],
-        sm: ["0.8125rem", { lineHeight: "1.25rem" }],
-        base: ["0.9375rem", { lineHeight: "1.5rem" }],
-        lg: ["1.0625rem", { lineHeight: "1.625rem" }],
-        xl: ["1.25rem", { lineHeight: "1.75rem", letterSpacing: "-0.01em" }],
-        "2xl": ["1.5rem", { lineHeight: "1.95rem", letterSpacing: "-0.015em" }],
-        "3xl": ["1.875rem", { lineHeight: "2.25rem", letterSpacing: "-0.02em" }],
-        "4xl": ["2.375rem", { lineHeight: "2.6rem", letterSpacing: "-0.025em" }],
-        "5xl": ["3rem", { lineHeight: "1.08", letterSpacing: "-0.03em" }],
-        "6xl": ["3.75rem", { lineHeight: "1.03", letterSpacing: "-0.035em" }],
-        "7xl": ["4.5rem", { lineHeight: "1", letterSpacing: "-0.04em" }],
+        "2xs": ["0.75rem", { lineHeight: "1.05rem", letterSpacing: "0.01em" }],
+        xs: ["0.8125rem", { lineHeight: "1.2rem" }],
+        sm: ["0.875rem", { lineHeight: "1.375rem" }],
+        base: ["1rem", { lineHeight: "1.65rem" }],
+        lg: ["1.125rem", { lineHeight: "1.75rem" }],
+        xl: ["1.3125rem", { lineHeight: "1.85rem", letterSpacing: "-0.005em" }],
+        "2xl": ["1.625rem", { lineHeight: "2.1rem", letterSpacing: "-0.01em" }],
+        "3xl": ["2rem", { lineHeight: "2.4rem", letterSpacing: "-0.015em" }],
+        "4xl": ["2.5rem", { lineHeight: "2.85rem", letterSpacing: "-0.02em" }],
+        "5xl": ["3.125rem", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
+        "6xl": ["3.75rem", { lineHeight: "1.05", letterSpacing: "-0.025em" }],
+        "7xl": ["4.5rem", { lineHeight: "1.02", letterSpacing: "-0.03em" }],
       },
 
       borderRadius: {

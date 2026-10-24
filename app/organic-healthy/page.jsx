@@ -12,7 +12,7 @@ const STANDARDS = [
   },
   {
     icon: ShieldCheck,
-    title: "Audited, not self-declared",
+    title: "Audited, not self declared",
     body: "Our team visits each farm annually and reviews input records. Certificates alone are not enough.",
   },
   {
@@ -38,8 +38,8 @@ export default function OrganicHealthyPage() {
       eyebrow="Certified organic"
       title="Organic, without the organic price"
       description="We buy direct from farms we have visited, so the certification premium does not land on your receipt twice."
-      image="https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&q=70&w=1800"
-      imageAlt="Rows of leafy greens growing on a farm"
+      image="https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&q=70&w=1800"
+      imageAlt="Fresh vegetables piled high on a market stall"
       stats={[
         { value: `${organic.length}`, label: "organic listings" },
         { value: "42", label: "audited farms" },

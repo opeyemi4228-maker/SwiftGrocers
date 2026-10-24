@@ -5,7 +5,7 @@ import { ProductCardSkeleton } from "@/components/ProductCard";
 export const metadata = {
   title: "Shop all groceries",
   description:
-    "Browse fresh produce, bakery, dairy, pantry staples and household essentials with same-day delivery.",
+    "Browse fresh produce, bakery, dairy, pantry staples and household essentials with same day delivery.",
 };
 
 function ShopFallback() {

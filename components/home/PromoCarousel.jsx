@@ -10,8 +10,8 @@ const SLIDES = [
   {
     id: "weekly",
     eyebrow: "Every Thursday",
-    title: "Best-loved staples, up to 25% off",
-    body: "Rotating vendor discounts on the things that actually run out — rice, oil, eggs, bread.",
+    title: "Best loved staples, up to 25% off",
+    body: "Rotating vendor discounts on the things that actually run out: rice, oil, eggs, bread.",
     cta: { label: "Shop this week's deals", href: "/deals" },
     surface: "bg-accent-400 text-neutral-950",
     onSurface: "bg-neutral-950 text-neutral-0 hover:bg-neutral-800",
@@ -25,7 +25,7 @@ const SLIDES = [
   {
     id: "organic",
     eyebrow: "Certified organic",
-    title: "The organic aisle, without the organic markup",
+    title: "Organic food at fair prices",
     body: "Buying direct from 42 audited farms means the certificate does not land on your receipt twice.",
     cta: { label: "Shop organic", href: "/organic-healthy" },
     surface: "bg-brand-700 text-neutral-0",
@@ -40,7 +40,7 @@ const SLIDES = [
   {
     id: "first-order",
     eyebrow: "New here",
-    title: "₦2,000 off your first basket",
+    title: "₦2,000 off your first order",
     body: "No card needed until checkout, and you can still pay the driver at the door if you prefer.",
     cta: { label: "Create an account", href: "/auth" },
     surface: "bg-neutral-900 text-neutral-0",
@@ -63,7 +63,7 @@ const INTERVAL = 7000;
  * Auto-advance is a hazard for anyone who reads slowly, uses a screen reader,
  * or is mid-tap, so it stops on hover, on focus anywhere inside, when the tab
  * is hidden, and permanently once the user touches any control. The pause
- * button is real and exposes its state — WCAG 2.2.2 asks for exactly that.
+ * button is real and exposes its state, WCAG 2.2.2 asks for exactly that.
  */
 export default function PromoCarousel() {
   const [index, setIndex] = useState(0);
@@ -88,7 +88,7 @@ export default function PromoCarousel() {
     return () => clearInterval(timer);
   }, [playing, interacted, index, go]);
 
-  // Pause while the tab is in the background — advancing unseen is pointless.
+  // Pause while the tab is in the background, advancing unseen is pointless.
   useEffect(() => {
     const onVisibility = () => setPlaying(!document.hidden);
     document.addEventListener("visibilitychange", onVisibility);

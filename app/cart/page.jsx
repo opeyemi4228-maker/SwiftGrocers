@@ -10,6 +10,7 @@ import {
   selectCount,
   useCartHydrated,
 } from "@/lib/states/cartStore";
+import { useUserStore, signInHref } from "@/lib/states/userStore";
 import { priceOrder, findPromo, FREE_DELIVERY_THRESHOLD, deliveryEstimate } from "@/lib/commerce";
 import { formatPrice, cn } from "@/lib/utils";
 import Button from "@/components/ui/Button";
@@ -25,7 +26,7 @@ function LineItem({ item, onQuantity, onRemove, onSave }) {
   return (
     <li className="flex gap-4 py-6 first:pt-0">
       <Link
-        href={`/product/${item.slug}`}
+        href={item.href ?? `/product/${item.slug}`}
         className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-surface-sunken sm:h-28 sm:w-28"
       >
         <SmartImage src={item.image} alt={item.name} sizes="112px" className="object-cover" />
@@ -35,7 +36,7 @@ function LineItem({ item, onQuantity, onRemove, onSave }) {
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <Link
-              href={`/product/${item.slug}`}
+              href={item.href ?? `/product/${item.slug}`}
               className="text-sm font-semibold text-content-strong hover:text-brand-700 sm:text-base dark:hover:text-brand-300"
             >
               {item.name}
@@ -144,6 +145,7 @@ function PromoField({ promo, onApply, onClear }) {
 export default function CartPage() {
   const hydrated = useCartHydrated();
   const items = useCartStore((state) => state.items);
+  const checkoutHref = useUserStore((state) => state.user) ? "/payment" : signInHref("/payment");
   const saved = useCartStore((state) => state.saved);
   const promo = useCartStore((state) => state.promo);
   const setQuantity = useCartStore((state) => state.setQuantity);
@@ -181,7 +183,7 @@ export default function CartPage() {
         <EmptyState
           icon={ShoppingBag}
           title="Your cart is empty"
-          description="Nothing here yet. Browse the aisles or pick up where the deals are."
+          description="Nothing here yet. Start shopping or check out this week’s deals."
           action={<Button href="/shop">Start shopping</Button>}
           secondaryAction={
             <Button href="/deals" variant="outline">
@@ -369,7 +371,7 @@ export default function CartPage() {
                 </div>
               </dl>
 
-              <Button href="/payment" size="lg" block className="mt-6">
+              <Button href={checkoutHref} size="lg" block className="mt-6">
                 Checkout
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Button>

@@ -5,7 +5,7 @@ import CollectionPage from "@/components/shop/CollectionPage";
 export const metadata = {
   title: "Fresh picks",
   description:
-    "New arrivals and same-day fresh produce, picked by our buyers the morning your order ships.",
+    "New arrivals and same day fresh produce, picked by our buyers the morning your order ships.",
 };
 
 export default function FreshPicksPage() {

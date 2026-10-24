@@ -12,7 +12,7 @@ const HEIGHTS = {
 };
 
 /** Brand lockup, rendered from the source artwork at its native aspect ratio. */
-export default function Logo({ className, href = "/", size = "lg", label = "SwiftGrocers — home" }) {
+export default function Logo({ className, href = "/", size = "lg", label = "SwiftGrocers home" }) {
   const mark = (
     <Image
       src={assets.logo}

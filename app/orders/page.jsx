@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { CreditCard, MapPin, Package, RotateCcw, Search, Truck } from "lucide-react";
 import { ORDERS, ORDER_STATUS } from "@/lib/orders";
 import { useCartStore } from "@/lib/states/cartStore";
+import { useRequireUser } from "@/lib/states/userStore";
 import { formatDate, formatPrice, cn } from "@/lib/utils";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -13,6 +14,7 @@ import Chip from "@/components/ui/Chip";
 import EmptyState from "@/components/ui/EmptyState";
 import Input from "@/components/ui/Input";
 import SmartImage from "@/components/ui/SmartImage";
+import Skeleton from "@/components/ui/Skeleton";
 
 const FILTERS = [
   { key: "all", label: "All orders" },
@@ -110,6 +112,7 @@ function OrderCard({ order, onReorder }) {
 }
 
 export default function OrdersPage() {
+  const { ready } = useRequireUser("/orders");
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const addItem = useCartStore((state) => state.addItem);
@@ -146,6 +149,15 @@ export default function OrdersPage() {
     []
   );
 
+  if (!ready) {
+    return (
+      <div className="container-page py-12" aria-busy="true" aria-label="Loading your orders">
+        <Skeleton className="h-9 w-48" />
+        <Skeleton className="mt-8 h-48 rounded-2xl" />
+      </div>
+    );
+  }
+
   return (
     <>
       <header className="border-b border-line bg-surface">
@@ -160,7 +172,7 @@ export default function OrdersPage() {
 
           <h1 className="text-3xl font-bold sm:text-4xl">Orders &amp; returns</h1>
           <p className="mt-2 text-base text-content-muted">
-            Track a delivery, buy a past basket again, or start a refund.
+            Track a delivery, buy a past order again, or ask for a refund.
           </p>
 
           <dl className="mt-8 grid max-w-lg grid-cols-3 gap-6 border-t border-line pt-6">

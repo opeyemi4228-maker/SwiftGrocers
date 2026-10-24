@@ -5,7 +5,7 @@ import CollectionPage from "@/components/shop/CollectionPage";
 
 export const metadata = {
   title: "Deals & offers",
-  description: "This week's negotiated vendor discounts on groceries, with same-day delivery.",
+  description: "This week's negotiated vendor discounts on groceries, with same day delivery.",
 };
 
 export default function DealsPage() {
@@ -20,14 +20,14 @@ export default function DealsPage() {
     <CollectionPage
       eyebrow="Refreshed every Thursday"
       title="Deals & offers"
-      description="Discounts we negotiate directly with vendors on things people actually buy — not clearance on what nobody wanted."
-      image="https://images.unsplash.com/photo-1601599561213-832382fd07ba?auto=format&fit=crop&q=70&w=1800"
-      imageAlt="A shopping trolley filled with groceries"
+      description="Lower prices on the things people buy every day. New deals every Thursday."
+      image="https://images.unsplash.com/photo-1734255026082-82fdc81991f0?auto=format&fit=crop&q=70&w=1800"
+      imageAlt="Traders selling fresh tomatoes at a Nigerian market"
       tone="accent"
       stats={[
         { value: `${best}%`, label: "biggest discount" },
         { value: `${deals.length}`, label: "products reduced" },
-        { value: formatPrice(saved), label: "off the full basket" },
+        { value: formatPrice(saved), label: "saved if you buy them all" },
       ]}
       products={deals}
       footerNote="Prices hold until Wednesday midnight or until vendor stock runs out."

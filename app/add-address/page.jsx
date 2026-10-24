@@ -137,6 +137,7 @@ export default function AddAddressPage() {
                 <option>Lagos</option>
                 <option>Abuja</option>
                 <option>Port Harcourt</option>
+                <option>Ibadan</option>
               </Select>
             </Field>
 

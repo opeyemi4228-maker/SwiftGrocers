@@ -1,4 +1,4 @@
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { AppContextProvider } from "@/context/AppContext";
 import SiteHeader from "@/components/layout/SiteHeader";
@@ -6,41 +6,57 @@ import SiteFooter from "@/components/layout/SiteFooter";
 import MobileTabBar from "@/components/layout/MobileTabBar";
 import CartDrawer from "@/components/cart/CartDrawer";
 import Toasts from "@/components/layout/Toasts";
+import LocationPicker from "@/components/location/LocationPicker";
+import WhatsAppButton from "@/components/layout/WhatsAppButton";
+import JsonLd from "@/components/seo/JsonLd";
+import { SITE, organizationLd, websiteLd } from "@/lib/seo";
 
-const sans = Inter({
+const sans = Montserrat({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-sans",
 });
 
-const display = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
-  display: "swap",
-  variable: "--font-display",
-});
-
 export const metadata = {
-  metadataBase: new URL("https://swiftgrocers.com.ng"),
+  metadataBase: new URL(SITE.url),
   title: {
-    default: "SwiftGrocers — Fresh groceries delivered in hours",
+    default: "SwiftGrocers | Order Foodstuff & Groceries Online in Nigeria",
     template: "%s · SwiftGrocers",
   },
-  description:
-    "Shop fresh produce, pantry staples and household essentials from vendors across Nigeria. Same-day delivery, transparent pricing, free over ₦25,000.",
+  description: SITE.description,
+  applicationName: SITE.name,
+  keywords: [
+    "buy foodstuff online",
+    "online grocery Lagos",
+    "grocery delivery Abuja",
+    "foodstuff delivery Port Harcourt",
+    "buy rice online Nigeria",
+    "soup ingredients delivery",
+    "egusi soup pack",
+    "pay on delivery groceries",
+  ],
   openGraph: {
     type: "website",
-    siteName: "SwiftGrocers",
-    title: "SwiftGrocers — Fresh groceries delivered in hours",
-    description:
-      "Fresh produce and everyday essentials, picked the day you order and delivered to your door.",
+    siteName: SITE.name,
+    locale: SITE.locale,
+    url: SITE.url,
+    title: "SwiftGrocers | Skip the market. Keep the freshness.",
+    description: "Fresh foodstuff and groceries at your door in under 2 hours. Lagos, Abuja, Port Harcourt and Ibadan. Pay on delivery.",
   },
-  icons: { icon: "/favicon.ico" },
+  twitter: {
+    card: "summary_large_image",
+    site: SITE.twitter,
+    title: "SwiftGrocers | Skip the market. Keep the freshness.",
+    description: "Foodstuff delivered in under 2 hours. Pay on delivery.",
+  },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large" } },
+  formatDetection: { telephone: true, address: false, email: false },
+  appleWebApp: { capable: true, title: SITE.name, statusBarStyle: "default" },
 };
 
 export const viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fbfaf7" },
+    { media: "(prefers-color-scheme: light)", color: "#0f4d3a" },
     { media: "(prefers-color-scheme: dark)", color: "#13100d" },
   ],
   width: "device-width",
@@ -50,8 +66,9 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${sans.variable} ${display.variable}`}>
+    <html lang="en-NG" className={sans.variable}>
       <body className="min-h-dvh pb-tabbar font-sans">
+        <JsonLd data={[organizationLd(), websiteLd()]} />
         <AppContextProvider>
           <div className="flex min-h-dvh flex-col">
             <SiteHeader />
@@ -63,6 +80,8 @@ export default function RootLayout({ children }) {
 
           <MobileTabBar />
           <CartDrawer />
+          <LocationPicker />
+          <WhatsAppButton />
           <Toasts />
         </AppContextProvider>
       </body>

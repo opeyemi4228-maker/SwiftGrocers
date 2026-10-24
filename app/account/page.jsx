@@ -17,7 +17,7 @@ import {
   User,
 } from "lucide-react";
 import { ORDERS } from "@/lib/orders";
-import { useUserStore, useUserHydrated } from "@/lib/states/userStore";
+import { useUserStore, useUserHydrated, signInHref } from "@/lib/states/userStore";
 import { useCartStore, selectCount, useCartHydrated } from "@/lib/states/cartStore";
 import { formatPrice } from "@/lib/utils";
 import Button from "@/components/ui/Button";
@@ -30,7 +30,7 @@ const LINKS = [
     href: "/orders",
     icon: Package,
     title: "Order history",
-    description: "Track a delivery, reorder a basket, or start a refund.",
+    description: "Track a delivery, order again, or ask for a refund.",
   },
   {
     href: "/cart",
@@ -48,7 +48,7 @@ const LINKS = [
     href: "/deals",
     icon: Tag,
     title: "Deals for you",
-    description: "This week's vendor-negotiated discounts.",
+    description: "This week's vendor negotiated discounts.",
   },
   {
     href: "/contact",
@@ -86,9 +86,9 @@ export default function AccountPage() {
   const cartCount = useCartStore(selectCount);
   const cartHydrated = useCartHydrated();
 
-  // Signed-out visitors have nothing to see here — send them to sign in.
+  // Signed-out visitors have nothing to see here, send them to sign in.
   useEffect(() => {
-    if (hydrated && !user) router.replace("/auth");
+    if (hydrated && !user) router.replace(signInHref("/account"));
   }, [hydrated, user, router]);
 
   const stats = useMemo(() => {
@@ -245,7 +245,7 @@ export default function AccountPage() {
           <User className="h-4 w-4 shrink-0 text-content-muted" aria-hidden="true" />
           <dt className="w-24 shrink-0 text-sm text-content-muted">Name</dt>
           <dd className="min-w-0 flex-1 truncate text-sm font-medium text-content-strong">
-            {user.firstName || "—"}
+            {user.firstName || "Not set"}
           </dd>
         </div>
         <div className="flex items-center gap-4 py-4">

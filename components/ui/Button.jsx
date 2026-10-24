@@ -52,7 +52,7 @@ export const buttonVariants = cva(
 
 /**
  * Icons arrive either as a component reference (`icon={ArrowRight}`) from
- * client components, or as an element (`icon={<ArrowRight />}`) — the form a
+ * client components, or as an element (`icon={<ArrowRight />}`), the form a
  * server component must use, since a component reference cannot be serialized
  * across that boundary.
  *
@@ -81,7 +81,7 @@ function renderIcon(icon) {
 
 /**
  * Passing `href` renders a Next.js `Link` with button styling. `as` overrides
- * the element for anything else, but only from client components — a component
+ * the element for anything else, but only from client components, a component
  * reference cannot cross the server/client boundary as a prop.
  *
  * `loading` overlays the spinner so the button's width never changes.

@@ -14,7 +14,7 @@ const CHANNELS = [
   {
     icon: MessageCircle,
     title: "Live chat",
-    detail: "Fastest — usually answered in under two minutes",
+    detail: "Fastest, usually answered in under two minutes",
     action: "Start a chat",
     href: "#contact-form",
   },
@@ -37,15 +37,15 @@ const CHANNELS = [
 const FAQS = [
   {
     q: "Something arrived damaged or not fresh. What now?",
-    a: "Report it from the order page within 24 hours and we refund that line in full. No photos, no back-and-forth — we take your word for it.",
+    a: "Report it from the order page within 24 hours and we refund that line in full. No photos, no back and forth, we take your word for it.",
   },
   {
     q: "Can I change my delivery window after ordering?",
-    a: "Yes, any time before a picker starts on your basket. You will get a notification when that happens, usually 45 minutes before the window.",
+    a: "Yes, any time before our shopper starts packing your order. You will get a notification when that happens, usually 45 minutes before the window.",
   },
   {
-    q: "Do you deliver outside Lagos, Abuja and Port Harcourt?",
-    a: "Not yet. We are adding Ibadan and Benin City next quarter — leave your email and we will tell you when your area opens.",
+    q: "Do you deliver outside Lagos, Abuja, Port Harcourt and Ibadan?",
+    a: "Not yet. Enugu, Benin City and Kano are next. Message us on WhatsApp and we will tell you the day your area opens.",
   },
   {
     q: "Is there a minimum order?",
@@ -181,7 +181,7 @@ export default function ContactPage() {
                 htmlFor="message"
                 required
                 error={errors.message}
-                hint="Include your order number if you have one — it gets you a faster answer."
+                hint="Include your order number if you have one, it gets you a faster answer."
               >
                 <Textarea
                   value={form.message}
@@ -216,7 +216,7 @@ export default function ContactPage() {
                   <div>
                     <dt className="font-medium text-content-strong">Support hours</dt>
                     <dd className="mt-0.5 text-content-muted">
-                      Monday to Sunday, 7:00 AM – 9:00 PM WAT
+                      Monday to Sunday, 7:00 AM to 9:00 PM WAT
                     </dd>
                   </div>
                 </div>

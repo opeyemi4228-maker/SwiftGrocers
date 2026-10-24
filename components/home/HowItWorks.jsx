@@ -2,16 +2,16 @@ import React from "react";
 
 const STEPS = [
   {
-    title: "Fill your basket",
-    body: "Search 4,000 products or start from a past order. Prices update live as vendors restock.",
+    title: "Choose your items",
+    body: "Search or tap a category, then press “Add”. You can also send your list to us on WhatsApp.",
   },
   {
-    title: "Pick your window",
-    body: "Two hours from now, or a slot later in the week. Change it any time before the picker starts.",
+    title: "Pick a delivery time",
+    body: "Choose when you want it. Most orders arrive in about 2 hours.",
   },
   {
-    title: "Watch it arrive",
-    body: "Follow your driver on the map. Pay on delivery or in advance — whichever you prefer.",
+    title: "Pay when it arrives",
+    body: "Check your items at the door, then pay with cash, transfer, card or POS.",
   },
 ];
 

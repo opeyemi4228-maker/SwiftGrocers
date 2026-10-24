@@ -8,11 +8,11 @@ import SmartImage from "@/components/ui/SmartImage";
 export const metadata = {
   title: "Our story",
   description:
-    "Why SwiftGrocers buys direct from Nigerian farms and vendors, and how the two-hour delivery promise actually works.",
+    "Why SwiftGrocers buys direct from Nigerian farms and vendors, and how the two hour delivery promise actually works.",
 };
 
 const NUMBERS = [
-  { value: "12,400", label: "households served" },
+  { value: "38,000+", label: "households served" },
   { value: "180", label: "partner farms & vendors" },
   { value: "3", label: "cities covered" },
   { value: "2 hrs", label: "median delivery time" },
@@ -55,7 +55,7 @@ const TIMELINE = [
   {
     year: "2023",
     title: "Abuja and Port Harcourt",
-    body: "Two more cities, two more cold-chain depots, and the two-hour promise became the default rather than the exception.",
+    body: "Two more cities, two more cold chain depots, and the two hour promise became the default rather than the exception.",
   },
   {
     year: "2026",
@@ -84,7 +84,7 @@ export default function AboutPage() {
             </h1>
             <p className="mt-6 max-w-lg text-lg text-content-muted">
               Nigerian produce is some of the best in the world, and most of it spoils between the
-              farm and the plate. SwiftGrocers exists to shorten that trip — for the people growing
+              farm and the plate. SwiftGrocers exists to shorten that trip, for the people growing
               it as much as the people eating it.
             </p>
 

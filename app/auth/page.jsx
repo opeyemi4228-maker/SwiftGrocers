@@ -5,17 +5,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, Lock, Mail, Truck, User } from "lucide-react";
-import { useUserStore } from "@/lib/states/userStore";
+import { useUserStore, safeNext } from "@/lib/states/userStore";
 import { cn } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import Input, { Field } from "@/components/ui/Input";
 import Logo from "@/components/layout/Logo";
 
 const BENEFITS = [
-  "Reorder a past basket in two taps",
+  "Buy your past orders again in two taps",
   "Track your driver on the map",
   "Save addresses and payment methods",
-  "Members-only weekly deals",
+  "Members only weekly deals",
 ];
 
 /** Rough password strength signal. Deliberately advisory, never blocking. */
@@ -76,13 +76,13 @@ export default function AuthPage() {
     });
     setBusy(false);
     toast.success(isSignUp ? "Account created" : "Welcome back");
-    router.push("/shop");
+    router.replace(safeNext(new URLSearchParams(window.location.search).get("next")));
   };
 
   return (
     <div className="min-h-dvh">
       {/*
-        Sign-in renders without the site header, footer or tab bar (see
+        Sign in renders without the site header, footer or tab bar (see
         `lib/chrome.js`), so this bar carries the only way back out.
       */}
       <div className="border-b border-line bg-surface/85 backdrop-blur-xl">
@@ -127,7 +127,7 @@ export default function AuthPage() {
 
           <p className="flex items-center gap-2.5 border-t border-white/15 pt-6 text-sm text-neutral-0/70">
             <Truck className="h-4 w-4 shrink-0" aria-hidden="true" />
-            12,400 households across Lagos, Abuja and Port Harcourt
+            38,000+ households across Lagos, Abuja, Port Harcourt and Ibadan
           </p>
         </aside>
 

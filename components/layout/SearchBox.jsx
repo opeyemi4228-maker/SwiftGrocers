@@ -95,7 +95,7 @@ export default function SearchBox({ className, autoFocus = false, onNavigate, si
             }}
             onFocus={() => setOpen(true)}
             onKeyDown={onKeyDown}
-            placeholder="Search for fresh produce, brands, essentials…"
+            placeholder="Search: rice, tomatoes, yam…"
             aria-label="Search products"
             role="combobox"
             aria-expanded={showPanel}

@@ -4,8 +4,8 @@ import { Leaf, RotateCcw, Truck, Wallet } from "lucide-react";
 const VALUES = [
   {
     icon: Truck,
-    title: "Two-hour delivery",
-    body: "Order before 6 PM and it arrives the same day, tracked door to door.",
+    title: "Two hour delivery",
+    body: "Order before 7 PM and it arrives the same day, tracked door to door.",
   },
   {
     icon: Leaf,
@@ -14,7 +14,7 @@ const VALUES = [
   },
   {
     icon: Wallet,
-    title: "Prices you can check",
+    title: "No haggling, no surprises",
     body: "The shelf price is the price. No surge pricing, no service fee at checkout.",
   },
   {

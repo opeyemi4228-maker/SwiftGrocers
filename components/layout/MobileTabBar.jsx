@@ -34,8 +34,8 @@ export default function MobileTabBar() {
   // what the server rendered: signed out.
   const signedIn = userHydrated && Boolean(user);
 
-  // The label stays "Account" either way — signed out, the tab is how you get
-  // to sign-in — so hydrating the session never shifts the bar.
+  // The label stays "Account" either way, signed out, the tab is how you get
+  // to sign-in, so hydrating the session never shifts the bar.
   const tabs = TABS.map((tab) =>
     tab.type === "account"
       ? { ...tab, label: "Account", href: signedIn ? "/account" : "/auth" }
@@ -75,7 +75,7 @@ export default function MobileTabBar() {
               </span>
               <span
                 className={cn(
-                  "text-[11px]",
+                  "text-xs",
                   active
                     ? "font-semibold text-brand-700 dark:text-brand-300"
                     : "font-medium text-content-muted"

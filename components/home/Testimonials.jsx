@@ -18,7 +18,7 @@ const REVIEWS = [
   },
   {
     quote:
-      "The prices actually hold. Nothing quietly goes up between the basket and the checkout, which is more than I can say for the alternatives.",
+      "The prices actually hold. Nothing quietly goes up between the cart and the checkout, which is more than I can say for the alternatives.",
     name: "Chinelo Eze",
     detail: "GRA, Port Harcourt · 61 orders",
     tone: "bg-info-soft text-info",
